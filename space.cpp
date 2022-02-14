@@ -5,7 +5,7 @@ void load_screen();
 void print_Screen();
 char board[38][100];
 int main(){
-
+print_Screen();
 
 }
 void load_screen(){
