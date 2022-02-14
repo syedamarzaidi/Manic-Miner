@@ -23,7 +23,7 @@ void load_screen(){
     file.close();
 }
 void print_Screen(){
-    for(int row_idx = 0;row_idx < 38){
+    for(int row_idx = 0;row_idx < 38;row_idx++){
         for(int col_idx = 0;col_idx < 100;col_idx++){
             cout << board[row_idx][col_idx];
         }
