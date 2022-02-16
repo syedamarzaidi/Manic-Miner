@@ -14,8 +14,8 @@ void minerMoveRight();
 bool isRightMovePossible(int temp_row_idx, int temp_col_idx);
 bool isLeftMovePossible(int temp_row_idx, int temp_col_idx);
 // Temperary Checks Varaible
-string MoveRightStatus = "Alert";
-string MoveLeftStatus = "Alert";
+string MoveRightStatus = "Obstacle_Present";//Variable to keep status for moving in right Wheather there is a obstacle present at right
+string MoveLeftStatus = "Obstacle_Present";//Variable to keep status for moving in Left Wheather there is a obstacle present at Left
 int main()
 {
     bool gameRunning = true;
@@ -115,42 +115,37 @@ bool isLeftMovePossible(int temp_row_idx, int temp_col_idx)
 }
 void minerMoveLeft()
 {
-    string status = "Relax"; // Variable to Store Status as is there any Wall Present at left Side
     for (int row_idx = 0; row_idx < maze_row; row_idx++)
     {
         for (int col_idx = 0; col_idx < maze_col; col_idx++)
         {
-
+           if(maze[row_idx][col_idx] == '/' && isLeftMovePossible(row_idx,col_idx)){
+               MoveLeftStatus = "No_Obstacle";
+           }
+           if(MoveLeftStatus == "No_Obstacle"){
             if (maze[row_idx][col_idx] == '/')
             {
-                if (maze[row_idx][col_idx - 1] == ' ')
-                {
                     maze[row_idx][col_idx] = ' ';
                     gotoxy(col_idx, row_idx);
                     cout << maze[row_idx][col_idx];
                     maze[row_idx][col_idx - 1] = '/';
                     gotoxy(col_idx - 1, row_idx);
                     cout << maze[row_idx][col_idx - 1];
-                }
-                else
-                {
-                    status = "Alert";
-                }
             }
             else if (maze[row_idx][col_idx] == '\\')
             {
-                if (status == "Relax")
-                {
+                
                     maze[row_idx][col_idx] = ' ';
                     gotoxy(col_idx, row_idx);
                     cout << maze[row_idx][col_idx];
                     maze[row_idx][col_idx - 1] = '\\';
                     gotoxy(col_idx - 1, row_idx);
                     cout << maze[row_idx][col_idx - 1];
-                }
             }
+           }
         }
     }
+    MoveLeftStatus = "Obstacle";
 }
 void minerMoveRight()
 {
@@ -160,9 +155,9 @@ void minerMoveRight()
         {
             if (maze[row_idx][col_idx] == '\\' && isRightMovePossible(row_idx, col_idx))
             {
-                MoveRightStatus = "Relax";
+                MoveRightStatus = "No_Obstacle";
             }
-            if (MoveRightStatus == "Relax")
+            if (MoveRightStatus == "No_Obstacle")
             {
                 if (maze[row_idx][col_idx] == '/')
                 {
@@ -185,5 +180,5 @@ void minerMoveRight()
             }
         }
     }
-    MoveRightStatus = "Alert";
+    MoveRightStatus = "Obstacle_Present";
 }
