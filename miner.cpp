@@ -11,15 +11,18 @@ void loadMaze();
 void printMaze();
 void ManicMoveLeft();
 void ManicMoveRight();
-void FindManicCurrentLocation();
+void ManicMoveDown();
+void SetManicCurrentLocation();
 void ManicJump();
-void ManicFalling();
+void FellTheManic();
 bool isManicFalling();
 bool isRightMovePossible(int temp_row_idx, int temp_col_idx);
 bool isLeftMovePossible(int temp_row_idx, int temp_col_idx);
+bool isDownMovePossible(int temp_row_idx,int temp_col_idx);
 // Checks Varaible on Player Movement
 string MoveRightStatus = "Obstacle_Present";//Variable to keep status for moving in right Wheather there is a obstacle present at right
 string MoveLeftStatus = "Obstacle_Present";//Variable to keep status for moving in Left Wheather there is a obstacle present at Left
+string MoveDownStatus = "Obstacle_Present";//Variable to keep status for moving down wheather there is a obstacle present at down
 int Manic_Current_Row = 0;
 int Manic_Current_Col = 0;
 string ManicFallingStatus = "NOT FALLING";
@@ -33,6 +36,7 @@ int main()
     while (gameRunning)
     {
         Sleep(50);
+        if(!isManicFalling()){
         if (GetAsyncKeyState(VK_LEFT))
         {
             ManicMoveLeft();
@@ -43,6 +47,10 @@ int main()
         }
         else if(GetAsyncKeyState(VK_SPACE)){
             ManicJump();
+        }
+        }
+        else if(ManicFallingStatus == "FALLING"){
+            FellTheManic();
         }
     }
     return 0;
@@ -124,6 +132,12 @@ bool isLeftMovePossible(int temp_row_idx, int temp_col_idx)
     }
     return false;
 }
+bool isDownMovePossible(int temp_row_idx,int temp_col_idx){
+    if(maze[temp_row_idx+1][temp_col_idx] == ' ' && maze[temp_row_idx+1][temp_col_idx+1] == ' '){
+        return true;
+    }
+    return false;
+}
 void ManicMoveLeft()
 {
     if(ManicFallingStatus == "NOT FALLING"){
@@ -197,7 +211,36 @@ void ManicMoveRight()
     MoveRightStatus = "Obstacle_Present";
     }
 }
-void FindManicCurrentLocation(){
+void ManicMoveDown(){
+    SetManicCurrentLocation();
+    for(int temp_row = Manic_Current_Row+2;temp_row >= Manic_Current_Row;temp_row--){
+        for(int temp_col = Manic_Current_Col;temp_col < Manic_Current_Col+2;temp_col++){
+          if(isDownMovePossible(temp_row,temp_col)){
+              MoveDownStatus = "No_Obstacle";
+          }
+          if(MoveDownStatus == "No_Obstacle"){
+          if(maze[temp_row][temp_col] == '/'){
+              maze[temp_row][temp_col] = ' ';
+              gotoxy(temp_col,temp_row);
+              cout << maze[temp_row][temp_col];
+              maze[temp_row+1][temp_col] = '/';
+              gotoxy(temp_col,temp_row+1);
+              cout << maze[temp_row+1][temp_col];
+          }
+          else if(maze[temp_row][temp_col] == '\\'){
+              maze[temp_row][temp_col] = ' ';
+              gotoxy(temp_col,temp_row);
+              cout << maze[temp_row][temp_col];
+              maze[temp_row+1][temp_col] = '\\';
+              gotoxy(temp_col,temp_row+1);
+              cout << maze[temp_row+1][temp_col];
+          }
+          }
+        }
+    }
+    MoveDownStatus = "Obstacle_Present";
+}
+void SetManicCurrentLocation(){
     string isLocationFound = "NOT";
     for(int temp_row_idx = 0;temp_row_idx < maze_row;temp_row_idx++){
         for(int temp_col_idx = 0;temp_col_idx < maze_col;temp_col_idx++){
@@ -216,7 +259,8 @@ void FindManicCurrentLocation(){
 void ManicJump(){
 
 }
-bool isMinnerFalling(){
+bool isManicFalling(){
+    SetManicCurrentLocation();
    if(maze[Manic_Current_Row+3][Manic_Current_Col] == ' ' && maze[Manic_Current_Row+3][Manic_Current_Col+1] == ' '){
        ManicFallingStatus = "FALLING";
        return true;
@@ -224,6 +268,9 @@ bool isMinnerFalling(){
    ManicFallingStatus = "NOT FALLING";
    return false;
 }
-void ManicFalling(){
-if(isManicFalling())
+void FellTheManic(){
+if(isManicFalling()){
+ManicMoveDown();
 }
+}
+
