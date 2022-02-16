@@ -9,13 +9,21 @@ char maze[maze_row][maze_col];
 void gotoxy(int x, int y);
 void loadMaze();
 void printMaze();
-void minerMoveLeft();
-void minerMoveRight();
+void ManicMoveLeft();
+void ManicMoveRight();
+void FindManicCurrentLocation();
+void ManicJump();
+void ManicFalling();
+bool isManicFalling();
 bool isRightMovePossible(int temp_row_idx, int temp_col_idx);
 bool isLeftMovePossible(int temp_row_idx, int temp_col_idx);
-// Temperary Checks Varaible
+// Checks Varaible on Player Movement
 string MoveRightStatus = "Obstacle_Present";//Variable to keep status for moving in right Wheather there is a obstacle present at right
 string MoveLeftStatus = "Obstacle_Present";//Variable to keep status for moving in Left Wheather there is a obstacle present at Left
+int Manic_Current_Row = 0;
+int Manic_Current_Col = 0;
+string ManicFallingStatus = "NOT FALLING"
+// Checks Variable Ends
 int main()
 {
     bool gameRunning = true;
@@ -27,11 +35,14 @@ int main()
         Sleep(50);
         if (GetAsyncKeyState(VK_LEFT))
         {
-            minerMoveLeft();
+            ManicMoveLeft();
         }
         else if (GetAsyncKeyState(VK_RIGHT))
         {
-            minerMoveRight();
+            ManicMoveRight();
+        }
+        else if(GetAsyncKeyState(VK_SPACE)){
+            ManicJump();
         }
     }
     return 0;
@@ -113,8 +124,9 @@ bool isLeftMovePossible(int temp_row_idx, int temp_col_idx)
     }
     return false;
 }
-void minerMoveLeft()
+void ManicMoveLeft()
 {
+    if(ManicFallingStatus == "NOT FALLING"){
     for (int row_idx = 0; row_idx < maze_row; row_idx++)
     {
         for (int col_idx = 0; col_idx < maze_col; col_idx++)
@@ -146,9 +158,11 @@ void minerMoveLeft()
         }
     }
     MoveLeftStatus = "Obstacle";
+    }
 }
-void minerMoveRight()
+void ManicMoveRight()
 {
+    if(ManicFallingStatus == "NOT FALLING"){
     for (int row_idx = 0; row_idx < maze_row; row_idx++)
     {
         for (int col_idx = maze_col - 1; col_idx >= 0; col_idx--)
@@ -181,4 +195,35 @@ void minerMoveRight()
         }
     }
     MoveRightStatus = "Obstacle_Present";
+    }
+}
+void FindManicCurrentLocation(){
+    string isLocationFound = "NOT";
+    for(int temp_row_idx = 0;temp_row_idx < maze_row;temp_row_idx++){
+        for(int temp_col_idx = 0;temp_col_idx < maze_col;temp_col_idx++){
+            if(maze[temp_row_idx][temp_col_idx] == '/'){
+                Manic_Current_Row = temp_row_idx;
+                Manic_Current_Col = temp_col_idx;
+                isLocationFound = "FOUND";
+                break;
+            }
+        }
+        if(isLocationFound == "FOUND"){
+            break;
+        }
+    }
+}
+void ManicJump(){
+
+}
+bool isMinnerFalling(){
+   if(maze[Manic_Current_Row+3][Manic_Current_Col] == ' ' && maze[Manic_Current_Row+3][Manic_Current_Col+1] == ' '){
+       ManicFallingStatus = "FALLING";
+       return true;
+   } 
+   ManicFallingStatus = "NOT FALLING";
+   return false;
+}
+void ManicFalling(){
+if(isManicFalling())
 }
