@@ -22,7 +22,7 @@ string MoveRightStatus = "Obstacle_Present";//Variable to keep status for moving
 string MoveLeftStatus = "Obstacle_Present";//Variable to keep status for moving in Left Wheather there is a obstacle present at Left
 int Manic_Current_Row = 0;
 int Manic_Current_Col = 0;
-string ManicFallingStatus = "NOT FALLING"
+string ManicFallingStatus = "NOT FALLING";
 // Checks Variable Ends
 int main()
 {
