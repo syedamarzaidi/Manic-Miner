@@ -21,6 +21,12 @@ bool isRightMovePossible(int temp_row_idx, int temp_col_idx);
 bool isLeftMovePossible(int temp_row_idx, int temp_col_idx);
 bool isDownMovePossible(int temp_row_idx, int temp_col_idx);
 bool isUpHurdlePresent(int temp_row_idx, int temp_col_idx);
+void MoveEnemy1Horizontal();
+bool isRightEnemy1Possible(int temp_row_idx, int temp_col_idx);
+bool isLeftEnemy1Possible(int temp_row_idx, int temp_col_idx);
+void MoveEnemy1Right();
+void MoveEnemy1Left();
+string isEnemyStuck = "NOT STUCK";
 // Checks Varaible on Player Movement
 string MoveRightStatus = "Obstacle_Present"; // Variable to keep status for moving in right Wheather there is a obstacle present at right
 string MoveLeftStatus = "Obstacle_Present";  // Variable to keep status for moving in Left Wheather there is a obstacle present at Left
@@ -49,15 +55,16 @@ int main()
     while (gameRunning)
     {
         Sleep(50);
+        MoveEnemy1Horizontal();
         Temp_Manic_Falling_Status = isManicFalling();
-            if (GetAsyncKeyState(VK_LEFT))
-            {
-                    ManicMoveLeft();
-            }
-            else if (GetAsyncKeyState(VK_RIGHT))
-            {
-                    ManicMoveRight();
-            }
+        if (GetAsyncKeyState(VK_LEFT))
+        {
+            ManicMoveLeft();
+        }
+        else if (GetAsyncKeyState(VK_RIGHT))
+        {
+            ManicMoveRight();
+        }
         if (ManicFallingStatus == "FALLING" && ManicJumpingStatus == "NOT JUMPING")
         {
             FellTheManic();
@@ -83,6 +90,9 @@ int main()
                 JumpManic();
                 ManicJumpCount++;
             }
+        }
+        if(GetAsyncKeyState(VK_ESCAPE)){
+            gameRunning = false;
         }
     }
     return 0;
@@ -368,5 +378,117 @@ void FellTheManic()
     if (isManicFalling())
     {
         ManicMoveDown();
+    }
+}
+bool isRightEnemy1Possible(int temp_row_idx, int temp_col_idx)
+{
+    if (maze[temp_row_idx + 2][temp_col_idx + 2] == ' ')
+    {
+        return true;
+    }
+    return false;
+}
+bool isLeftEnemy1Possible(int temp_row_idx, int temp_col_idx)
+{
+    if (maze[temp_row_idx + 3][temp_col_idx - 2] == ' ')
+    {
+        return false;
+    }
+    return true;
+}
+void MoveEnemy1Right()
+{
+    string EnemyRightStatus = "Obstacle";
+    for (int row_idx = 0; row_idx < maze_row; row_idx++)
+    {
+        for (int col_idx = 0; col_idx < maze_col; col_idx++)
+        {
+            if (maze[row_idx][col_idx] == '0')
+            {
+                if (isRightEnemy1Possible(row_idx, col_idx))
+                {
+                    EnemyRightStatus = "No Obstacle";
+                }
+                else{
+                    isEnemyStuck = "STUCK";
+                }
+            }
+            if (EnemyRightStatus == "No Obstacle")
+            {
+                if (maze[row_idx][col_idx] == '0')
+                { // Moving the Head of Enemy
+                    maze[row_idx][col_idx] = ' ';
+                    gotoxy(col_idx, row_idx);
+                    cout << ' ';
+                    maze[row_idx][col_idx + 1] = '0';
+                    gotoxy(col_idx + 1, row_idx);
+                    cout << '0';
+                    break;
+                }
+                if (maze[row_idx][col_idx] == '+')
+                { // Moving the Body of Enemy
+                    maze[row_idx][col_idx] = ' ';
+                    gotoxy(col_idx, row_idx);
+                    cout << ' ';
+                    maze[row_idx][col_idx + 1] = '+';
+                    gotoxy(col_idx + 1, row_idx);
+                    cout << '+';
+                    col_idx = col_idx + 1;
+                    // cin >> temp_flag;
+                }
+                // cin >> temp_flag;
+            }
+        }
+    }
+}
+void MoveEnemy1Left()
+{
+    string EnemyLeftStatus = "Obstacle";
+    for (int row_idx = 0; row_idx < maze_row; row_idx++)
+    {
+        for (int col_idx = 0; col_idx < maze_col; col_idx++)
+        {
+            if (maze[row_idx][col_idx] == '0')
+            {
+                if (isLeftEnemy1Possible(row_idx, col_idx))
+                {
+                    EnemyLeftStatus = "No Obstacle";
+                }
+                else{
+                    isEnemyStuck = "NOT STUCK";
+                }
+            }
+            if (EnemyLeftStatus == "No Obstacle")
+            {
+                if (maze[row_idx][col_idx] == '0')
+                { // Moving the Head of Enemy
+                    maze[row_idx][col_idx] = ' ';
+                    gotoxy(col_idx, row_idx);
+                    cout << ' ';
+                    maze[row_idx][col_idx - 1] = '0';
+                    gotoxy(col_idx - 1, row_idx);
+                    cout << '0';
+                    break;
+                }
+                if (maze[row_idx][col_idx] == '+')
+                { // Moving the Body of Enemy
+                    maze[row_idx][col_idx] = ' ';
+                    gotoxy(col_idx, row_idx);
+                    cout << ' ';
+                    maze[row_idx][col_idx - 1] = '+';
+                    gotoxy(col_idx - 1, row_idx);
+                    cout << '+';
+                    col_idx = col_idx - 1;
+                }
+            }
+        }
+    }
+}
+void MoveEnemy1Horizontal(){
+    if(isEnemyStuck == "STUCK"){
+        MoveEnemy1Left();
+    }
+    else if(isEnemyStuck == "NOT STUCK"){
+        MoveEnemy1Right();
     }
 }
