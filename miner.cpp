@@ -9,13 +9,13 @@ char maze[maze_row][maze_col];
 void gotoxy(int x, int y);
 void loadMaze();
 void printMaze();
-void ManicMoveLeft();
-void ManicMoveRight();
-void ManicMoveDown();
-void ManicMoveUp();
+bool ManicMoveLeft();
+bool ManicMoveRight();
+bool ManicMoveDown();
+bool ManicMoveUp();
 void SetManicCurrentLocation(); // To Store the Manic Row and Column position in Manic_Current_Row and Manic_Current_Col Variables
-void JumpManic();
-void FellTheManic();
+bool JumpManic();
+bool FellTheManic();
 bool isManicFalling();
 bool isRightMovePossible(int temp_row_idx, int temp_col_idx);
 bool isLeftMovePossible(int temp_row_idx, int temp_col_idx);
@@ -26,7 +26,11 @@ bool isRightEnemy1Possible(int temp_row_idx, int temp_col_idx);
 bool isLeftEnemy1Possible(int temp_row_idx, int temp_col_idx);
 void MoveEnemy1Right();
 void MoveEnemy1Left();
+bool isClimbPossibleLevel1();
+void ClimbLevel1();
 string isEnemyStuck = "NOT STUCK";
+int laddder_X = 14; // The Left HEad of Manic should be Equal to this to climb
+int ladder_Y = 6;
 // Checks Varaible on Player Movement
 string MoveRightStatus = "Obstacle_Present"; // Variable to keep status for moving in right Wheather there is a obstacle present at right
 string MoveLeftStatus = "Obstacle_Present";  // Variable to keep status for moving in Left Wheather there is a obstacle present at Left
@@ -59,11 +63,11 @@ int main()
         Temp_Manic_Falling_Status = isManicFalling();
         if (GetAsyncKeyState(VK_LEFT))
         {
-            ManicMoveLeft();
+           gameRunning= ManicMoveLeft();
         }
         else if (GetAsyncKeyState(VK_RIGHT))
         {
-            ManicMoveRight();
+            gameRunning = ManicMoveRight();
         }
         if (ManicFallingStatus == "FALLING" && ManicJumpingStatus == "NOT JUMPING")
         {
@@ -73,7 +77,7 @@ int main()
         {
             if (GetAsyncKeyState(VK_SPACE))
             {
-                JumpManic();
+                gameRunning = JumpManic();
                 ManicJumpCount++;
                 ManicJumpingStatus = "JUMPING";
             }
@@ -87,13 +91,19 @@ int main()
             }
             else
             {
-                JumpManic();
+                gameRunning = JumpManic();
                 ManicJumpCount++;
             }
         }
+        if(GetAsyncKeyState(VK_NUMPAD5)){
+
+        }
+
         if(GetAsyncKeyState(VK_ESCAPE)){
+            cout << "Game Over";
             gameRunning = false;
         }
+
     }
     return 0;
 }
@@ -135,11 +145,11 @@ void gotoxy(int x, int y)
 bool isRightMovePossible(int temp_row_idx, int temp_col_idx)
 {
     int temp_count = 0;
-    if (maze[temp_row_idx][temp_col_idx + 1] == ' ')
+    if (maze[temp_row_idx][temp_col_idx + 1] == ' ' || maze[temp_row_idx][temp_col_idx + 1] == '0' || maze[temp_row_idx][temp_col_idx + 1] == '+')
     {
         temp_count++;
     }
-    if (maze[temp_row_idx + 1][temp_col_idx + 1] == ' ')
+    if (maze[temp_row_idx + 1][temp_col_idx + 1] == ' ' || maze[temp_row_idx + 1][temp_col_idx + 1] == '0' || maze[temp_row_idx + 1][temp_col_idx + 1] == '+')
     {
         temp_count++;
     }
@@ -156,15 +166,15 @@ bool isRightMovePossible(int temp_row_idx, int temp_col_idx)
 bool isLeftMovePossible(int temp_row_idx, int temp_col_idx)
 {
     int temp_count = 0;
-    if (maze[temp_row_idx][temp_col_idx - 1] == ' ')
+    if (maze[temp_row_idx][temp_col_idx - 1] == ' ' || maze[temp_row_idx][temp_col_idx - 1] == '0' || maze[temp_row_idx][temp_col_idx - 1] == '+' || maze[temp_row_idx][temp_col_idx - 1] == '|')
     {
         temp_count++;
     }
-    if (maze[temp_row_idx + 1][temp_col_idx - 1] == ' ')
+    if (maze[temp_row_idx + 1][temp_col_idx - 1] == ' ' || maze[temp_row_idx + 1][temp_col_idx - 1] == '0' || maze[temp_row_idx + 1][temp_col_idx - 1] == '+' || maze[temp_row_idx + 1][temp_col_idx - 1] == '|')
     {
         temp_count++;
     }
-    if (maze[temp_row_idx + 2][temp_col_idx - 1] == ' ')
+    if (maze[temp_row_idx + 2][temp_col_idx - 1] == ' ' || maze[temp_row_idx + 2][temp_col_idx - 1] == '0' || maze[temp_row_idx + 2][temp_col_idx - 1] == '+' || maze[temp_row_idx + 2][temp_col_idx - 1] == '|')
     {
         temp_count++;
     }
@@ -176,7 +186,7 @@ bool isLeftMovePossible(int temp_row_idx, int temp_col_idx)
 }
 bool isDownMovePossible(int temp_row_idx, int temp_col_idx)
 {
-    if (maze[temp_row_idx + 1][temp_col_idx] == ' ' && maze[temp_row_idx + 1][temp_col_idx + 1] == ' ')
+    if (maze[temp_row_idx + 1][temp_col_idx] == ' ' || maze[temp_row_idx + 1][temp_col_idx] == '0' || maze[temp_row_idx + 1][temp_col_idx + 1] == '+')
     {
         return true;
     }
@@ -191,7 +201,7 @@ bool isUpHurdlePresent(int temp_row_idx, int temp_col_idx)
     return true;
 }
 
-void ManicMoveLeft()
+bool ManicMoveLeft()
 {
     for (int row_idx = 0; row_idx < maze_row; row_idx++)
     {
@@ -199,6 +209,9 @@ void ManicMoveLeft()
         {
             if (maze[row_idx][col_idx] == '/' && isLeftMovePossible(row_idx, col_idx))
             {
+                if(maze[row_idx+1][col_idx-1] == '0' || maze[row_idx+1][col_idx-1] == '+' || maze[row_idx+2][col_idx-1] == '0' || maze[row_idx+2][col_idx-1] == '+' || maze[row_idx][col_idx-1] =='0' || maze[row_idx][col_idx-1] == '+'){
+                    return false;
+                }
                 MoveLeftStatus = "No_Obstacle";
             }
             if (MoveLeftStatus == "No_Obstacle")
@@ -214,7 +227,6 @@ void ManicMoveLeft()
                 }
                 else if (maze[row_idx][col_idx] == '\\')
                 {
-
                     maze[row_idx][col_idx] = ' ';
                     gotoxy(col_idx, row_idx);
                     cout << ' ';
@@ -222,12 +234,14 @@ void ManicMoveLeft()
                     gotoxy(col_idx - 1, row_idx);
                     cout << maze[row_idx][col_idx - 1];
                 }
+                
             }
         }
     }
     MoveLeftStatus = "Obstacle";
+    return true;
 }
-void ManicMoveRight()
+bool ManicMoveRight()
 {
     if (ManicFallingStatus == "NOT FALLING" || ManicJumpingStatus == "JUMPING")
     {
@@ -237,6 +251,9 @@ void ManicMoveRight()
             {
                 if (maze[row_idx][col_idx] == '\\' && isRightMovePossible(row_idx, col_idx))
                 {
+                     if(maze[row_idx+1][col_idx+1] == '0' || maze[row_idx+1][col_idx+1] == '+' || maze[row_idx+2][col_idx+1] == '0' || maze[row_idx+2][col_idx+1] == '+' || maze[row_idx][col_idx+1] == '0' || maze[row_idx][col_idx+1] == '+'){
+                        return false;
+                    }
                     MoveRightStatus = "No_Obstacle";
                 }
                 if (MoveRightStatus == "No_Obstacle")
@@ -259,13 +276,15 @@ void ManicMoveRight()
                         gotoxy(col_idx + 1, row_idx);
                         cout << maze[row_idx][col_idx + 1];
                     }
+                   
                 }
             }
         }
         MoveRightStatus = "Obstacle_Present";
     }
+    return true;
 }
-void ManicMoveDown()
+bool ManicMoveDown()
 {
     SetManicCurrentLocation();
     for (int temp_row = Manic_Current_Row + 2; temp_row >= Manic_Current_Row; temp_row--)
@@ -274,6 +293,9 @@ void ManicMoveDown()
         {
             if (isDownMovePossible(temp_row, temp_col))
             {
+                 if(maze[temp_row+3][temp_col] == '0' || maze[temp_row+3][temp_col] == '+'){
+                    return false;
+                }
                 MoveDownStatus = "No_Obstacle";
             }
             if (MoveDownStatus == "No_Obstacle")
@@ -296,12 +318,14 @@ void ManicMoveDown()
                     gotoxy(temp_col, temp_row + 1);
                     cout << maze[temp_row + 1][temp_col];
                 }
+               
             }
         }
     }
     MoveDownStatus = "Obstacle_Present";
+    return true;
 }
-void ManicMoveUp()
+bool ManicMoveUp()
 {
     SetManicCurrentLocation();
     for (int temp_row = Manic_Current_Row; temp_row < Manic_Current_Row + 3; temp_row++)
@@ -336,6 +360,7 @@ void ManicMoveUp()
         }
     }
     MoveUpStatus = "Obstacle_Present";
+return true;
 }
 void SetManicCurrentLocation()
 {
@@ -358,9 +383,11 @@ void SetManicCurrentLocation()
         }
     }
 }
-void JumpManic()
+bool JumpManic()
 {
-    ManicMoveUp();
+    bool temp_flag = true;
+    temp_flag = ManicMoveUp();
+return temp_flag;
 }
 bool isManicFalling()
 {
@@ -373,12 +400,14 @@ bool isManicFalling()
     ManicFallingStatus = "NOT FALLING";
     return false;
 }
-void FellTheManic()
+bool FellTheManic()
 {
+    bool temp_flag = true;
     if (isManicFalling())
     {
-        ManicMoveDown();
+        temp_flag = ManicMoveDown();
     }
+    return temp_flag;
 }
 bool isRightEnemy1Possible(int temp_row_idx, int temp_col_idx)
 {
@@ -491,4 +520,14 @@ void MoveEnemy1Horizontal(){
     else if(isEnemyStuck == "NOT STUCK"){
         MoveEnemy1Right();
     }
+}
+bool isClimbPossibleLevel1(){
+    SetManicCurrentLocation();
+    if(Manic_Current_Row == 14 && Manic_Current_Col == 6){
+        return true;
+    }
+    return false;
+}
+void ClimbLevel1(){
+    
 }
