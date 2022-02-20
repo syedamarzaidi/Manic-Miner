@@ -48,7 +48,7 @@ int main()
     bool Temp_Manic_Falling_Status;
     while (gameRunning)
     {
-        Sleep(100);
+        Sleep(50);
         Temp_Manic_Falling_Status = isManicFalling();
             if (GetAsyncKeyState(VK_LEFT))
             {
