@@ -27,7 +27,11 @@ bool isLeftEnemy1Possible(int temp_row_idx, int temp_col_idx);
 void MoveEnemy1Right();
 void MoveEnemy1Left();
 bool isClimbPossibleLevel1();
-void ClimbLevel1();
+void ClimbLevel1(string &step1, string &step2, int &ladder_count,string &ManicClimbing);
+void RemoveManic();
+void UpdateManicLadderPosition();
+void CalculateLives(int &lives);
+void PrintLives(int &lives);
 string isEnemyStuck = "NOT STUCK";
 int laddder_X = 14; // The Left HEad of Manic should be Equal to this to climb
 int ladder_Y = 6;
@@ -49,6 +53,12 @@ string ManicJumpingStatus = "NOT JUMPING";
 // Checks Variable Ends
 int main()
 {
+    int lives = 3;
+    string isManicClimbing = "NOT CLIMBING";
+    string step1 = "STOP"; // first go near ladder
+    string step2 = "STOP"; // in Secind Step manic will start climbing up
+    string step3 = "STOP"; // step3 will be move right when at the upperend of the ladder
+    int ladder_count = 0;
     string left_pressed = "NOT PRESSED";
     string right_pressed = "NOT PRESSED";
     bool gameRunning = true;
@@ -63,13 +73,13 @@ int main()
         Temp_Manic_Falling_Status = isManicFalling();
         if (GetAsyncKeyState(VK_LEFT))
         {
-           gameRunning= ManicMoveLeft();
+            gameRunning = ManicMoveLeft();
         }
         else if (GetAsyncKeyState(VK_RIGHT))
         {
             gameRunning = ManicMoveRight();
         }
-        if (ManicFallingStatus == "FALLING" && ManicJumpingStatus == "NOT JUMPING")
+        if (ManicFallingStatus == "FALLING" && ManicJumpingStatus == "NOT JUMPING" && isManicClimbing == "NOT CLIMBING")
         {
             FellTheManic();
         }
@@ -95,17 +105,36 @@ int main()
                 ManicJumpCount++;
             }
         }
-        if(GetAsyncKeyState(VK_NUMPAD5)){
-
+        if (GetAsyncKeyState(VK_NUMPAD5))
+        {
+                ClimbLevel1(step1, step2, ladder_count,isManicClimbing);
         }
 
-        if(GetAsyncKeyState(VK_ESCAPE)){
+        if (GetAsyncKeyState(VK_ESCAPE))
+        {
             cout << "Game Over";
             gameRunning = false;
         }
-
+        PrintLives(lives);
     }
     return 0;
+}
+void CalculateLives(int &lives){
+    lives = lives - 1;
+}
+void PrintLives(int &lives){
+    for(int temp_lives = lives,temp_count = 10;temp_lives!=0;temp_lives--,temp_count+=3){
+        gotoxy(temp_count,39);
+        cout << "/\\";
+        gotoxy(3,40);
+        cout << "Lives: ";
+        gotoxy(temp_count,40);
+        cout << "\\/";
+        gotoxy(temp_count,41);
+        cout << "/\\";
+    cout << '\t';
+    }
+    
 }
 void loadMaze()
 {
@@ -166,15 +195,15 @@ bool isRightMovePossible(int temp_row_idx, int temp_col_idx)
 bool isLeftMovePossible(int temp_row_idx, int temp_col_idx)
 {
     int temp_count = 0;
-    if (maze[temp_row_idx][temp_col_idx - 1] == ' ' || maze[temp_row_idx][temp_col_idx - 1] == '0' || maze[temp_row_idx][temp_col_idx - 1] == '+' || maze[temp_row_idx][temp_col_idx - 1] == '|')
+    if (maze[temp_row_idx][temp_col_idx - 1] == ' ' || maze[temp_row_idx][temp_col_idx - 1] == '0' || maze[temp_row_idx][temp_col_idx - 1] == '+' || maze[temp_row_idx][temp_col_idx - 1] == '|' || maze[temp_row_idx][temp_col_idx - 1] == '_')
     {
         temp_count++;
     }
-    if (maze[temp_row_idx + 1][temp_col_idx - 1] == ' ' || maze[temp_row_idx + 1][temp_col_idx - 1] == '0' || maze[temp_row_idx + 1][temp_col_idx - 1] == '+' || maze[temp_row_idx + 1][temp_col_idx - 1] == '|')
+    if (maze[temp_row_idx + 1][temp_col_idx - 1] == ' ' || maze[temp_row_idx + 1][temp_col_idx - 1] == '0' || maze[temp_row_idx + 1][temp_col_idx - 1] == '+' || maze[temp_row_idx + 1][temp_col_idx - 1] == '|' || maze[temp_row_idx + 1][temp_col_idx - 1] == '_')
     {
         temp_count++;
     }
-    if (maze[temp_row_idx + 2][temp_col_idx - 1] == ' ' || maze[temp_row_idx + 2][temp_col_idx - 1] == '0' || maze[temp_row_idx + 2][temp_col_idx - 1] == '+' || maze[temp_row_idx + 2][temp_col_idx - 1] == '|')
+    if (maze[temp_row_idx + 2][temp_col_idx - 1] == ' ' || maze[temp_row_idx + 2][temp_col_idx - 1] == '0' || maze[temp_row_idx + 2][temp_col_idx - 1] == '+' || maze[temp_row_idx + 2][temp_col_idx - 1] == '|' || maze[temp_row_idx + 2][temp_col_idx - 1] == '_')
     {
         temp_count++;
     }
@@ -194,7 +223,7 @@ bool isDownMovePossible(int temp_row_idx, int temp_col_idx)
 }
 bool isUpHurdlePresent(int temp_row_idx, int temp_col_idx)
 {
-    if (maze[temp_row_idx - 1][temp_col_idx] == ' ' && maze[temp_row_idx - 1][temp_col_idx + 1] == ' ')
+    if ((maze[temp_row_idx - 1][temp_col_idx] == ' ' && maze[temp_row_idx - 1][temp_col_idx + 1] == ' ') || (maze[temp_row_idx - 1][temp_col_idx] == '_' || maze[temp_row_idx - 1][temp_col_idx + 1] == '_'))
     {
         return false;
     }
@@ -209,7 +238,8 @@ bool ManicMoveLeft()
         {
             if (maze[row_idx][col_idx] == '/' && isLeftMovePossible(row_idx, col_idx))
             {
-                if(maze[row_idx+1][col_idx-1] == '0' || maze[row_idx+1][col_idx-1] == '+' || maze[row_idx+2][col_idx-1] == '0' || maze[row_idx+2][col_idx-1] == '+' || maze[row_idx][col_idx-1] =='0' || maze[row_idx][col_idx-1] == '+'){
+                if (maze[row_idx + 1][col_idx - 1] == '0' || maze[row_idx + 1][col_idx - 1] == '+' || maze[row_idx + 2][col_idx - 1] == '0' || maze[row_idx + 2][col_idx - 1] == '+' || maze[row_idx][col_idx - 1] == '0' || maze[row_idx][col_idx - 1] == '+')
+                {
                     return false;
                 }
                 MoveLeftStatus = "No_Obstacle";
@@ -234,7 +264,6 @@ bool ManicMoveLeft()
                     gotoxy(col_idx - 1, row_idx);
                     cout << maze[row_idx][col_idx - 1];
                 }
-                
             }
         }
     }
@@ -251,7 +280,8 @@ bool ManicMoveRight()
             {
                 if (maze[row_idx][col_idx] == '\\' && isRightMovePossible(row_idx, col_idx))
                 {
-                     if(maze[row_idx+1][col_idx+1] == '0' || maze[row_idx+1][col_idx+1] == '+' || maze[row_idx+2][col_idx+1] == '0' || maze[row_idx+2][col_idx+1] == '+' || maze[row_idx][col_idx+1] == '0' || maze[row_idx][col_idx+1] == '+'){
+                    if (maze[row_idx + 1][col_idx + 1] == '0' || maze[row_idx + 1][col_idx + 1] == '+' || maze[row_idx + 2][col_idx + 1] == '0' || maze[row_idx + 2][col_idx + 1] == '+' || maze[row_idx][col_idx + 1] == '0' || maze[row_idx][col_idx + 1] == '+')
+                    {
                         return false;
                     }
                     MoveRightStatus = "No_Obstacle";
@@ -276,7 +306,6 @@ bool ManicMoveRight()
                         gotoxy(col_idx + 1, row_idx);
                         cout << maze[row_idx][col_idx + 1];
                     }
-                   
                 }
             }
         }
@@ -293,7 +322,8 @@ bool ManicMoveDown()
         {
             if (isDownMovePossible(temp_row, temp_col))
             {
-                 if(maze[temp_row+3][temp_col] == '0' || maze[temp_row+3][temp_col] == '+'){
+                if (maze[temp_row + 3][temp_col] == '0' || maze[temp_row + 3][temp_col] == '+')
+                {
                     return false;
                 }
                 MoveDownStatus = "No_Obstacle";
@@ -318,7 +348,6 @@ bool ManicMoveDown()
                     gotoxy(temp_col, temp_row + 1);
                     cout << maze[temp_row + 1][temp_col];
                 }
-               
             }
         }
     }
@@ -360,7 +389,7 @@ bool ManicMoveUp()
         }
     }
     MoveUpStatus = "Obstacle_Present";
-return true;
+    return true;
 }
 void SetManicCurrentLocation()
 {
@@ -387,7 +416,7 @@ bool JumpManic()
 {
     bool temp_flag = true;
     temp_flag = ManicMoveUp();
-return temp_flag;
+    return temp_flag;
 }
 bool isManicFalling()
 {
@@ -438,7 +467,8 @@ void MoveEnemy1Right()
                 {
                     EnemyRightStatus = "No Obstacle";
                 }
-                else{
+                else
+                {
                     isEnemyStuck = "STUCK";
                 }
             }
@@ -483,7 +513,8 @@ void MoveEnemy1Left()
                 {
                     EnemyLeftStatus = "No Obstacle";
                 }
-                else{
+                else
+                {
                     isEnemyStuck = "NOT STUCK";
                 }
             }
@@ -513,21 +544,119 @@ void MoveEnemy1Left()
         }
     }
 }
-void MoveEnemy1Horizontal(){
-    if(isEnemyStuck == "STUCK"){
+void MoveEnemy1Horizontal()
+{
+    if (isEnemyStuck == "STUCK")
+    {
         MoveEnemy1Left();
     }
-    else if(isEnemyStuck == "NOT STUCK"){
+    else if (isEnemyStuck == "NOT STUCK")
+    {
         MoveEnemy1Right();
     }
 }
-bool isClimbPossibleLevel1(){
+bool isClimbPossibleLevel1()
+{
     SetManicCurrentLocation();
-    if(Manic_Current_Row == 14 && Manic_Current_Col == 6){
+    if (Manic_Current_Row == 14 && Manic_Current_Col == 6)
+    {
         return true;
     }
     return false;
 }
-void ClimbLevel1(){
-    
+void RemoveManic(){ // Removing Manic From the ladder Upper Position
+    SetManicCurrentLocation();
+    maze[Manic_Current_Row][Manic_Current_Col] = ' ';
+    gotoxy(Manic_Current_Col,Manic_Current_Row);
+    cout << ' ';
+    maze[Manic_Current_Row][Manic_Current_Col+1] = ' ';
+    gotoxy(Manic_Current_Col+1,Manic_Current_Row);
+    cout << ' ';
+    maze[Manic_Current_Row+1][Manic_Current_Col] = ' ';
+    gotoxy(Manic_Current_Col,Manic_Current_Row+1);
+    cout << ' ';
+    maze[Manic_Current_Row+1][Manic_Current_Col+1] = ' ';
+    gotoxy(Manic_Current_Col+1,Manic_Current_Row+1);
+    cout << ' ';
+    maze[Manic_Current_Row+2][Manic_Current_Col] = ' ';
+    gotoxy(Manic_Current_Col,Manic_Current_Row+2);
+    cout << ' ';
+    maze[Manic_Current_Row+2][Manic_Current_Col+1] = ' ';
+    gotoxy(Manic_Current_Col+1,Manic_Current_Row+2);
+    cout << ' ';
+}
+void UpdateManicLadderPosition(){ // This Function is Used to Lift the Manic To Upper Side From Ladder For Level 1
+    maze[7][6] = '/';
+gotoxy(6,7);
+cout << '/';
+maze[7][7] = '\\';
+gotoxy(7,7);
+cout << '\\';
+maze[8][6] = '\\';
+gotoxy(6,8);
+cout << '\\';
+maze[8][7] = '/';
+gotoxy(7,8);
+cout << '/';
+maze[9][6] = '/';
+gotoxy(6,9);
+cout << '/';
+maze[9][7] = '\\';
+gotoxy(7,9);
+cout << '\\';
+}
+void ClimbLevel1(string &step1, string &step2, int &ladder_count,string &ManicClimbing)
+{
+    char PreviousItem1 = '|';
+    char PreviousItem2 = '_';
+    char PreviousItem3 = '|';
+    if (ladder_count < 3)
+    {
+        step1 = "START";
+    }
+    else
+    {
+        step1 = "STOP";
+    }
+    if (ladder_count >= 3 && ladder_count < 9)
+    {
+        step2 = "START";
+        ManicClimbing = "CLIMBING";
+    }
+    else
+    {
+        step2 = "STOP";
+    }
+    if (step1 == "START")
+    {
+        ManicMoveLeft();
+        ladder_count++;
+        if (ladder_count == 3)
+        {
+            int temp_col = 5;
+            for (int temp_row = 14; temp_row < 17; temp_row++)
+            {
+                gotoxy(temp_col, temp_row);
+                cout << PreviousItem1;
+                step1 = "STOP";
+            }
+        }
+    }
+    else if (step2 == "START")
+    {
+        ManicMoveUp();
+        ladder_count++;
+        if(ladder_count>4){
+            SetManicCurrentLocation();
+            gotoxy(Manic_Current_Col,Manic_Current_Row+3);
+            cout <<'_';
+            gotoxy(Manic_Current_Col+1,Manic_Current_Row+3);
+            cout << '_';
+            if(ladder_count == 9){
+                RemoveManic(); //Removing Manic from ladder
+                UpdateManicLadderPosition(); // Putting Manic to Upper side after removing manic from ladder
+                ManicClimbing = "NOT CLIMBING";
+            }
+        }
+    }
 }
