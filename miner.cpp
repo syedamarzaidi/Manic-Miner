@@ -32,6 +32,7 @@ void ClimbUp(string &step1, string &step2, int &ladder_count, string &ManicClimb
 void ClimbDown(string &step1, string &step2, int &ladder_count, string &ManicClimbing, int temp_x, int temp_y, string &LeftKey, string &RightKey);
 void ManicClimb(string &step1, string &step2, int &ladder_count, string &ManicClimbing, int temp_x, int temp_y, string &LeftKey, string &RightKey,string &LadderPosition);
 string isClimbPosition(string &LeftKey, string &RightKey);
+void CompleteBrokenLadder();//This Function is used to Complete Ladder because it will be broken when manic will come down with ladder
 // isClimbPosition() Function is used to find wheather ladder is in front of Manic or manic is at the position to come down from ladder
 void RemoveManic();
 void UpdateManicLadderPositionUp(int temp_x, int temp_y); // This will update manic to upper ladder position according to temp_x,temp_y coordinates
@@ -756,17 +757,17 @@ void UpdateManicLadderPositionDown(int temp_x, int temp_y)
     maze[temp_x + 7][temp_y + 1] = '\\';
     gotoxy(temp_y + 1, temp_x + 7);
     cout << '\\';
-    maze[temp_x + 6][temp_y] = '\\';
-    gotoxy(temp_y, temp_x + 6);
+    maze[temp_x + 8][temp_y] = '\\';
+    gotoxy(temp_y, temp_x + 8);
     cout << '\\';
-    maze[temp_x + 6][temp_y + 1] = '/';
-    gotoxy(temp_y + 1, temp_x + 6);
+    maze[temp_x + 8][temp_y + 1] = '/';
+    gotoxy(temp_y + 1, temp_x + 8);
     cout << '/';
-    maze[temp_x + 5][temp_y] = '/';
-    gotoxy(temp_y, temp_x + 5);
+    maze[temp_x + 9][temp_y] = '/';
+    gotoxy(temp_y, temp_x + 9);
     cout << '/';
-    maze[temp_x + 5][temp_y + 1] = '\\';
-    gotoxy(temp_y + 1, temp_x + 5);
+    maze[temp_x + 9][temp_y + 1] = '\\';
+    gotoxy(temp_y + 1, temp_x + 9);
     cout << '\\';
     // Ending snippet code
 }
@@ -944,6 +945,7 @@ void ClimbDown(string &step1, string &step2, int &ladder_count, string &isManicC
 { //ClimbDown Function is used to Come DOwn From ladder 
     char PreviousItem1 = '|';
     char PreviousItem2 = '_';
+    isManicClimbing = "CLIMBING";
     if (ladder_count < 3)
     {
         step1 = "START"; // Step1 is started in which manic will move Left to go down at next step
@@ -955,7 +957,6 @@ void ClimbDown(string &step1, string &step2, int &ladder_count, string &isManicC
     if (ladder_count >= 3)
     {
         step2 = "START";
-        isManicClimbing = "CLIMBING";
     }
     else
     {
@@ -975,11 +976,11 @@ void ClimbDown(string &step1, string &step2, int &ladder_count, string &isManicC
         {
             ManicMoveRight();
         }
-    }
+    }   
     else if (step2 == "START")
     {
         ManicMoveDown();
-        if (ladder_count >= 6)
+        if (ladder_count >= 7)
         {
             SetManicCurrentLocation();
             gotoxy(Manic_Current_Col, Manic_Current_Row - 1);
@@ -988,13 +989,32 @@ void ClimbDown(string &step1, string &step2, int &ladder_count, string &isManicC
             cout << '_';
         }
         if (ladder_count == 9)
-        {
+        {   
             // Move Manic out of the ladder
             ladder_count = 0;
+            CompleteBrokenLadder();
             UpdateManicLadderPositionDown(temp_x, temp_y);
             isManicClimbing = "NOT CLIMBING";
             isManicFrozen = "NOT FROZEN";
         }
     }
     ladder_count++;
+}
+void CompleteBrokenLadder(){
+    //This Function will complete the ladder when manic will come out of the ladder
+    SetManicCurrentLocation();
+    int x = Manic_Current_Row;
+    int y = Manic_Current_Col;
+    maze[x][y] ='_';
+    maze[x][y+1] = '_';
+    maze[x+1][y]= '_';
+    maze[x+1][y+1]='_';
+    gotoxy(y,x);
+    cout << '_';
+    gotoxy(y+1,x);
+    cout << '_';
+    gotoxy(y,x+1);
+    cout << '_';
+    gotoxy(y+1;x+1);
+    cout << '_';
 }
