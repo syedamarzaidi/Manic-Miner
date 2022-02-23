@@ -6,17 +6,17 @@ using namespace std;
 const int maze_row = 34;
 const int maze_col = 105;
 char maze[maze_row][maze_col];
-void gotoxy(int x, int y);
-void loadMaze();
-void printMaze();
-bool ManicMoveLeft();
-bool ManicMoveRight();
-bool ManicMoveDown();
-bool ManicMoveUp();
+void gotoxy(int x, int y);      // This Function is created to move th cursor
+void loadMaze();                // This function is used to load maze from maze.txt file
+void printMaze();               // This function is used to print maze from maze.txt file
+bool ManicMoveLeft();           // This function is used to move manic at left side
+bool ManicMoveRight();          // This function is used to Move manic at right
+bool ManicMoveDown();           // This Function is used to move manic at down side
+bool ManicMoveUp();             // This function is used to manic at upper side
 void SetManicCurrentLocation(); // To Store the Manic Row and Column position in Manic_Current_Row and Manic_Current_Col Variables
-bool JumpManic();
-bool FellTheManic();
-bool isManicFalling();
+bool JumpManic();               // This function is used to Jump the manic according to settled manic jump limit variable
+bool FellTheManic();            // This function is used to fell manic when there is no solid material at the feet of manic
+bool isManicFalling();          // This function is used to return true if manic is falling
 bool isRightMovePossible(int temp_row_idx, int temp_col_idx);
 bool isLeftMovePossible(int temp_row_idx, int temp_col_idx);
 bool isDownMovePossible(int temp_row_idx, int temp_col_idx);
@@ -26,20 +26,24 @@ bool isRightEnemy1Possible(int temp_row_idx, int temp_col_idx);
 bool isLeftEnemy1Possible(int temp_row_idx, int temp_col_idx);
 void MoveEnemy1Right();
 void MoveEnemy1Left();
-bool isClimbPossibleLevel1();
-void ClimbLevel1(string &step1, string &step2, int &ladder_count, string &ManicClimbing);
+bool isClimbUpPossible(string &LeftKey, string &RightKey);
+bool isClimbDownPossible(string &LeftKey, string &RightKey);
+void ClimbUp(string &step1, string &step2, int &ladder_count, string &ManicClimbing, int temp_x, int temp_y, string &LeftKey, string &RightKey);
+void ClimbDown(string &step1, string &step2, int &ladder_count, string &ManicClimbing, int temp_x, int temp_y, string &LeftKey, string &RightKey);
+void ManicClimb(string &step1, string &step2, int &ladder_count, string &ManicClimbing, int temp_x, int temp_y, string &LeftKey, string &RightKey,string &LadderPosition);
+string isClimbPosition(string &LeftKey, string &RightKey);
+// isClimbPosition() Function is used to find wheather ladder is in front of Manic or manic is at the position to come down from ladder
 void RemoveManic();
-void UpdateManicLadderPosition();
+void UpdateManicLadderPositionUp(int temp_x, int temp_y); // This will update manic to upper ladder position according to temp_x,temp_y coordinates
 void CalculateLives(int &lives);
 void PrintLives(int &lives);
 void CalculateKeys();
 void PrintKeys();
 void ResetLevel1(int &position_X, int &position_Y); // This Function is used to Reset Maze When Manic is Touched with enemy
 void crawl_manic();
-bool isCrawlPositionPossible(); // This function is used to check wheather manic can crawl or not on certain location
-void crawMoveRight();           // This function is used to move right while manic is crawling
-bool isRightCrawPossible();     // This Function is used to crawl
-void ManicLayDown();            //This function is used to lay down manic
+bool isCrawlPositionPossible();          // This function is used to check wheather manic can crawl or not on certain location
+void CrawlMoveRight();                   // This function is used to move right while manic is crawling
+void ManicLayDown(string &isManicLayed); // This function is used to lay down manic
 string isEnemyStuck = "NOT STUCK";
 int laddder_X = 14; // The Left HEad of Manic should be Equal to this to climb
 int ladder_Y = 6;
@@ -59,9 +63,14 @@ int Manic_Current_Row = 0;                 // To Store Manic Current Row positio
 int Manic_Current_Col = 0;                 // To Store Manic Current Column Position
 string ManicFallingStatus = "NOT FALLING"; // Variable to Store Status of Manic Wheather Manic is Falling or Not
 string ManicJumpingStatus = "NOT JUMPING";
+string isManicFrozen = "NOT FROZEN"; // This variable will be freeze manic and manic can not move right or left when he is freeze
 // Checks Variable Ends
 int main()
 {
+    string LadderPosition = "NOTHING"; //This Variable is used to store status of ladder position as RIGHT OR LEFT OF MANIC
+    string isManicLayed = "NOT LAYED"; // This variable to check whather manic is layeed down to ground or not
+    string RightKey = "UNLOCKED";      // Right and left keys can be locaked or unlocked according to hurdles at front positions
+    string LeftKey = "UNLOCKED";
     int ManicInitialPosition_X = 29;
     int ManicInitialPosition_Y = 6;
     int lives = 3;
@@ -72,25 +81,36 @@ int main()
     int ladder_count = 0;
     string left_pressed = "NOT PRESSED";
     string right_pressed = "NOT PRESSED";
+    string ClimbingStatus = "END"; // This variable is used to store the status of climbing wheather the manic has started climbing or not
     bool gameRunning = true;
     loadMaze();
     system("cls");
     printMaze();
     bool Temp_Manic_Falling_Status;
+    int temp_x = 0; // Temperary VAriables to perform different functions on manic location
+    int temp_y = 0;
     for (int total_turns = lives; total_turns != 0; total_turns--)
     {
         while (gameRunning)
         {
-            Sleep(50);
+            Sleep(100);
             MoveEnemy1Horizontal();
             Temp_Manic_Falling_Status = isManicFalling();
-            if (GetAsyncKeyState(VK_LEFT))
-            {
-                gameRunning = ManicMoveLeft();
+            if (!isClimbUpPossible(LeftKey, RightKey) && LeftKey == "UNLOCKED")
+            { // The left key will be only pressed when there will be no ladder in front of manic to climb
+                // cin >>Temp_Manic_Falling_Status;
+                if (GetAsyncKeyState(VK_LEFT))
+                {
+                    gameRunning = ManicMoveLeft();
+                }
             }
-            else if (GetAsyncKeyState(VK_RIGHT))
+            // cin >> Temp_Manic_Falling_Status;
+            if (GetAsyncKeyState(VK_RIGHT))
             {
-                gameRunning = ManicMoveRight();
+                if (!isClimbUpPossible(LeftKey, RightKey) || RightKey == "UNLOCKED") // Fix Required at  ||
+                {
+                    gameRunning = ManicMoveRight();
+                }
             }
             if (ManicFallingStatus == "FALLING" && ManicJumpingStatus == "NOT JUMPING" && isManicClimbing == "NOT CLIMBING")
             {
@@ -118,14 +138,25 @@ int main()
                     ManicJumpCount++;
                 }
             }
-            if (GetAsyncKeyState(VK_RETURN))
+            if (GetAsyncKeyState(VK_NUMPAD0))
             {
-                ClimbLevel1(step1, step2, ladder_count, isManicClimbing);
+                if ((isClimbUpPossible(LeftKey, RightKey) || isClimbDownPossible(LeftKey,RightKey)) && isManicClimbing == "NOT CLIMBING")
+                {
+                    LadderPosition = isClimbPosition(LeftKey,RightKey);
+                    SetManicCurrentLocation();
+                    temp_x = Manic_Current_Row;
+                    temp_y = Manic_Current_Col;
+                }
+               ManicClimb(step1, step2, ladder_count, isManicClimbing, temp_x, temp_y,LeftKey,RightKey,LadderPosition);
             }
-            if(GetAsyncKeyState(VK_NUMPAD5)){
-                ManicLayDown();
+            if (isManicLayed == "NOT LAYED")
+            {
+                if (GetAsyncKeyState(VK_NUMPAD5))
+                {
+                    isManicLayed = "LAYED";
+                    ManicLayDown(isManicLayed);
+                }
             }
-
             if (GetAsyncKeyState(VK_ESCAPE))
             {
                 cout << "Game Over";
@@ -133,6 +164,10 @@ int main()
             }
             PrintLives(lives);
             PrintKeys();
+            if (isManicLayed == "LAYED")
+            {
+                CrawlMoveRight();
+            }
         }
 
         CalculateLives(lives);
@@ -248,7 +283,10 @@ bool isRightMovePossible(int temp_row_idx, int temp_col_idx)
     }
     if (temp_count == 3)
     {
-        return true;
+        if (isManicFrozen == "NOT FROZEN")
+        { // If manic is not on the ladder then hw is not freezed and he can move right
+            return true;
+        }
     }
     return false;
 }
@@ -269,13 +307,16 @@ bool isLeftMovePossible(int temp_row_idx, int temp_col_idx)
     }
     if (temp_count == 3)
     {
-        return true;
+        if (isManicFrozen == "NOT FROZEN")
+        { // If manic is not on ladder then he can move at left and he is in NOT FROZEN P
+            return true;
+        }
     }
     return false;
 }
 bool isDownMovePossible(int temp_row_idx, int temp_col_idx)
 {
-    if (maze[temp_row_idx + 1][temp_col_idx] == ' ' || maze[temp_row_idx + 1][temp_col_idx] == '0' || maze[temp_row_idx + 1][temp_col_idx + 1] == '+' || maze[temp_row_idx + 1][temp_col_idx + 1] == '!') // This If condition require editing in changing in condition when it will meet up with enemy
+    if (maze[temp_row_idx + 1][temp_col_idx] == ' ' || maze[temp_row_idx + 1][temp_col_idx] == '0' || maze[temp_row_idx + 1][temp_col_idx + 1] == '+' || maze[temp_row_idx + 1][temp_col_idx + 1] == '!' || maze[temp_row_idx + 1][temp_col_idx + 1] == '_') // This If condition require editing in changing in condition when it will meet up with enemy
     {
         return true;
     }
@@ -398,7 +439,7 @@ bool ManicMoveDown()
                 {
                     keys_captured += 1;
                 }
-                MoveDownStatus = "No_Obstacle";
+                MoveDownStatus = "No_Obstacle"; //Area is cleared so further processing is possible
             }
             if (MoveDownStatus == "No_Obstacle")
             {
@@ -631,10 +672,31 @@ void MoveEnemy1Horizontal()
         MoveEnemy1Right();
     }
 }
-bool isClimbPossibleLevel1()
+bool isClimbUpPossible(string &LeftKey, string &RightKey)
 {
+    RightKey = "UNLOCKED";
+    LeftKey = "UNLOCKED";
     SetManicCurrentLocation();
-    if (Manic_Current_Row == 14 && Manic_Current_Col == 6)
+    // This Condition is used to check wheather there is a ladder present at the front of manic to climb
+    if (maze[Manic_Current_Row][Manic_Current_Col - 1] == '|' && maze[Manic_Current_Row][Manic_Current_Col - 2] == '_')
+    {
+        LeftKey = "LOCKED"; // User cannot move left if left key is locked
+        RightKey = "UNLOCKED";
+        return true;
+    }
+    else if (maze[Manic_Current_Row][Manic_Current_Col + 2] == '|' && maze[Manic_Current_Row][Manic_Current_Col + 3] == '_')
+    {
+        RightKey = "LOCKED";
+        LeftKey = "UNLOCKED";
+        return true;
+    }
+    return false;
+}
+bool isClimbDownPossible(string &LeftKey,string &RightKey)
+{
+    // This function is used to check wheather manic can climb down or not
+    SetManicCurrentLocation();
+    if ((maze[Manic_Current_Row + 4][Manic_Current_Col - 2] == '_' || maze[Manic_Current_Row + 4][Manic_Current_Col - 1] == '_') || (maze[Manic_Current_Row + 4][Manic_Current_Col + 2] == '_' || maze[Manic_Current_Row + 4][Manic_Current_Col + 3] == '_'))
     {
         return true;
     }
@@ -662,26 +724,51 @@ void RemoveManic()
     gotoxy(Manic_Current_Col + 1, Manic_Current_Row + 2);
     cout << ' ';
 }
-void UpdateManicLadderPosition()
-{ // This Function is Used to Lift the Manic To Upper Side From Ladder For Level 1
-    maze[7][6] = '/';
-    gotoxy(6, 7);
+void UpdateManicLadderPositionUp(int temp_x, int temp_y)
+{                  // This Function is Used to Lift the Manic To Upper Side From Ladder For Level 1
+    RemoveManic(); // It will remove manic from the ladder and then manic will be shown outside of the ladder
+    maze[temp_x - 7][temp_y] = '/';
+    gotoxy(temp_y, temp_x - 7);
     cout << '/';
-    maze[7][7] = '\\';
-    gotoxy(7, 7);
+    maze[temp_x - 7][temp_y + 1] = '\\';
+    gotoxy(temp_y + 1, temp_x - 7);
     cout << '\\';
-    maze[8][6] = '\\';
-    gotoxy(6, 8);
+    maze[temp_x - 6][temp_y] = '\\';
+    gotoxy(temp_y, temp_x - 6);
     cout << '\\';
-    maze[8][7] = '/';
-    gotoxy(7, 8);
+    maze[temp_x - 6][temp_y + 1] = '/';
+    gotoxy(temp_y + 1, temp_x - 6);
     cout << '/';
-    maze[9][6] = '/';
-    gotoxy(6, 9);
+    maze[temp_x - 5][temp_y] = '/';
+    gotoxy(temp_y, temp_x - 5);
     cout << '/';
-    maze[9][7] = '\\';
-    gotoxy(7, 9);
+    maze[temp_x - 5][temp_y + 1] = '\\';
+    gotoxy(temp_y + 1, temp_x - 5);
     cout << '\\';
+}
+void UpdateManicLadderPositionDown(int temp_x, int temp_y)
+{
+    RemoveManic(); // Removing manic from the ladder
+    // Starting snippet of code to help manic to move out of the ladder
+    maze[temp_x + 7][temp_y] = '/';
+    gotoxy(temp_y, temp_x + 7);
+    cout << '/';
+    maze[temp_x + 7][temp_y + 1] = '\\';
+    gotoxy(temp_y + 1, temp_x + 7);
+    cout << '\\';
+    maze[temp_x + 6][temp_y] = '\\';
+    gotoxy(temp_y, temp_x + 6);
+    cout << '\\';
+    maze[temp_x + 6][temp_y + 1] = '/';
+    gotoxy(temp_y + 1, temp_x + 6);
+    cout << '/';
+    maze[temp_x + 5][temp_y] = '/';
+    gotoxy(temp_y, temp_x + 5);
+    cout << '/';
+    maze[temp_x + 5][temp_y + 1] = '\\';
+    gotoxy(temp_y + 1, temp_x + 5);
+    cout << '\\';
+    // Ending snippet code
 }
 bool isCrawlPositionPossible() // This Function is used to check wheather manic can come into a crawling position
 {
@@ -700,37 +787,63 @@ bool isCrawlPositionPossible() // This Function is used to check wheather manic 
     }
     return false;
 }
-void ManicLayDown(){
-    if(isCrawlPositionPossible()){
+void ManicLayDown(string &isManicLayed)
+{
+    if (isCrawlPositionPossible())
+    {
         SetManicCurrentLocation();
-        for(int x = Manic_Current_Row;x<Manic_Current_Row+3;x++){
-            for(int y= Manic_Current_Col;y<Manic_Current_Col+2;y++){
-                maze[x][y]=' ';
-                gotoxy(y,x);
+        for (int x = Manic_Current_Row; x < Manic_Current_Row + 3; x++)
+        {
+            for (int y = Manic_Current_Col; y < Manic_Current_Col + 2; y++)
+            {
+                maze[x][y] = ' ';
+                gotoxy(y, x);
                 cout << ' ';
             }
         }
+        isManicLayed = "LAYED";
     }
-    int x = Manic_Current_Row+2; //Choosen location for manic to be lay down
-    int y = Manic_Current_Col+2;
-    maze[x][y]='_';
-    maze[x][y+1]='_';
-    maze[x][y+2]='/';
-    maze[x][y+3]='\\';
-    gotoxy(y,x);
-    cout << '_';
-    gotoxy(y+1,x);
-    cout << '_';
-    gotoxy(y+2,x);
+    int x = Manic_Current_Row + 2; // Choosen location for manic to be lay down
+    int y = Manic_Current_Col + 2;
+    maze[x][y + 2] = '/';
+    maze[x][y + 3] = '\\';
+    gotoxy(y + 2, x);
     cout << '/';
-    gotoxy(y+3,x);
+    gotoxy(y + 3, x);
     cout << '\\';
 }
-void ClimbLevel1(string &step1, string &step2, int &ladder_count, string &ManicClimbing)
+void CrawlMoveRight()
+{
+    // bool temp_found_status = false;
+    for (int x = 0; x < maze_row; x++)
+    {
+        for (int y = maze_col - 1; y != 0; y--)
+        {
+            if (maze[x][y] == '\\')
+            { // This will match the head of manic when he is at crawling position and will move one step right
+                maze[x][y] = ' ';
+                gotoxy(y, x);
+                cout << ' ';
+                maze[x][y + 1] = '\\';
+                gotoxy(y + 1, x);
+                cout << '\\';
+            }
+            else if (maze[x][y] == '/')
+            {
+                maze[x][y] = ' ';
+                gotoxy(y, x);
+                cout << ' ';
+                maze[x][y + 1] = '/';
+                gotoxy(y + 1, x);
+                cout << '/';
+            }
+        }
+    }
+}
+void ClimbUp(string &step1, string &step2, int &ladder_count, string &ManicClimbing, int temp_x, int temp_y,string &LeftKey,string &RightKey)
 {
     char PreviousItem1 = '|';
     char PreviousItem2 = '_';
-    char PreviousItem3 = '|';
     if (ladder_count < 3)
     {
         step1 = "START";
@@ -738,6 +851,10 @@ void ClimbLevel1(string &step1, string &step2, int &ladder_count, string &ManicC
     else
     {
         step1 = "STOP";
+    }
+    if (ladder_count == 3)
+    {
+        isManicFrozen = "FROZEN";
     }
     if (ladder_count >= 3 && ladder_count < 9)
     {
@@ -776,10 +893,108 @@ void ClimbLevel1(string &step1, string &step2, int &ladder_count, string &ManicC
             cout << '_';
             if (ladder_count == 9)
             {
-                RemoveManic();               // Removing Manic from ladder
-                UpdateManicLadderPosition(); // Putting Manic to Upper side after removing manic from ladder
+                ladder_count = 0;
+                UpdateManicLadderPositionUp(temp_x, temp_y); // Putting Manic to Upper side after removing manic from ladder
                 ManicClimbing = "NOT CLIMBING";
+                isManicFrozen = "NOT FROZEN";
             }
         }
     }
+}
+void ManicClimb(string &step1, string &step2, int &ladder_count, string &ManicClimbing, int temp_x, int temp_y, string &LeftKey, string &RightKey,string &LadderPosition)
+{
+    // This Function will climb manic at up or down position according to ladder position
+    if (LadderPosition == "UP") // Manic will move Climb up to ladder
+    {
+        ClimbUp(step1, step2, ladder_count, ManicClimbing, temp_x, temp_y, LeftKey, RightKey);
+    }
+    else if (LadderPosition == "DOWN")
+    {
+        ClimbDown(step1, step2, ladder_count, ManicClimbing, temp_x, temp_y, LeftKey, RightKey);
+    }
+}
+string isClimbPosition(string &LeftKey, string &RightKey)
+{                                     // This Function is used to check manic should climb up or climb down
+    string temp_position = "NOTHING"; // By Default there is nothing means that ladder is not present near manic to climb up or climb down
+    if (isClimbUpPossible(LeftKey, RightKey))
+    {
+        temp_position = "UP"; // UP means ladder is set to move up
+    }
+    else if (isClimbDownPossible(LeftKey, RightKey))
+    {
+        temp_position = "DOWN"; // DOWN means that ladder is set at position that manic can move down
+    }
+    return temp_position;
+}
+string ManicClimbDownDirection()
+{ // This Function is used to check wheather ladder is at right or left side of the manic
+    string temp_status = "NOTHING";
+    SetManicCurrentLocation();
+    if (maze[Manic_Current_Row + 4][Manic_Current_Col - 1] == '_' || maze[Manic_Current_Row + 4][Manic_Current_Col - 2] == '_')
+    {
+        temp_status = "LEFT"; // ladder is at the left side of MAnic
+    }
+    else if (maze[Manic_Current_Row + 4][Manic_Current_Col + 2] == '_' || maze[Manic_Current_Row + 4][Manic_Current_Col + 3] == '_')
+    {
+        temp_status = "RIGHT"; // Ladder is at the right side of the Manic
+    }
+    return temp_status; // Returning the location of the ladder with respect to MAnic
+}
+void ClimbDown(string &step1, string &step2, int &ladder_count, string &isManicClimbing, int temp_x, int temp_y, string &LeftKey, string &RightKey)
+{ //ClimbDown Function is used to Come DOwn From ladder 
+    char PreviousItem1 = '|';
+    char PreviousItem2 = '_';
+    if (ladder_count < 3)
+    {
+        step1 = "START"; // Step1 is started in which manic will move Left to go down at next step
+    }
+    else
+    {
+        step1 = "STOP";
+    }
+    if (ladder_count >= 3)
+    {
+        step2 = "START";
+        isManicClimbing = "CLIMBING";
+    }
+    else
+    {
+        step2 = "STOP";
+    }
+    if (ladder_count == 3)
+    {
+        isManicFrozen = "FROZEN"; // Manic is Frozen and cannot Move right or left when he is coming down from ladder
+    }
+    if (step1 == "START")
+    {
+        if (ManicClimbDownDirection() == "LEFT") // Instead of Functions there will be variables in future to avoid bugs
+        {
+            ManicMoveLeft();
+        }
+        else if (ManicClimbDownDirection() == "RIGHT")
+        {
+            ManicMoveRight();
+        }
+    }
+    else if (step2 == "START")
+    {
+        ManicMoveDown();
+        if (ladder_count >= 6)
+        {
+            SetManicCurrentLocation();
+            gotoxy(Manic_Current_Col, Manic_Current_Row - 1);
+            cout << '_';
+            gotoxy(Manic_Current_Col + 1, Manic_Current_Row - 1);
+            cout << '_';
+        }
+        if (ladder_count == 9)
+        {
+            // Move Manic out of the ladder
+            ladder_count = 0;
+            UpdateManicLadderPositionDown(temp_x, temp_y);
+            isManicClimbing = "NOT CLIMBING";
+            isManicFrozen = "NOT FROZEN";
+        }
+    }
+    ladder_count++;
 }
