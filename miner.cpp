@@ -45,6 +45,8 @@ void CrawlManic(); //This Function is used to crawl manic with CrawlMoveRight An
 bool isCrawlPositionPossible();          // This function is used to check wheather manic can crawl or not on certain location
 void CrawlMoveRight();                   // This function is used to move right while manic is crawling
 void CrawlMoveLeft();                    // This Function is used to move left while manic is crawlings
+void MoveManicCrawlFace();               //This Function is used to change the face of manic when he is crawling
+string ManicCrawlingFaceLocation(); // This Function is used to Find the Manic Face side when he is crawling
 void ManicLayDown(string &isManicLayed); // This function is used to lay down manic
 string isEnemyStuck = "NOT STUCK";
 int laddder_X = 14; // The Left HEad of Manic should be Equal to this to climb
@@ -113,6 +115,7 @@ int main()
                         gameRunning = ManicMoveLeft();
                     }
                     if(isManicLayed == "LAYED"){
+                        MoveManicCrawlFace();
                         CrawlMoveLeft();
                     }
                 }
@@ -127,6 +130,7 @@ int main()
                         gameRunning = ManicMoveRight();
                     }
                     if(isManicLayed == "LAYED"){
+                        //MoveManicCrawlFace();
                         CrawlMoveRight();
                     }
                 }
