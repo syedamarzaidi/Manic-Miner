@@ -295,6 +295,9 @@ void PrintKeys()
     {
         keys_captured = keysLevel1 - temp_count;
     }
+    if(LevelStatus == "LEVEL2"){
+        keys_captured = keysLevel2-temp_count;
+    }
     gotoxy(40, 45);
     cout << "Keys :\t";
     for (int temp_idx = keys_captured; temp_idx != 0; temp_idx--)
