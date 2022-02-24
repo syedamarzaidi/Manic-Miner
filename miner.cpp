@@ -3,7 +3,7 @@
 #include <windows.h>
 #include <math.h>
 using namespace std;
-const int maze_row = 34;
+const int maze_row = 33;
 const int maze_col = 105;
 char maze[maze_row][maze_col];
 void gotoxy(int x, int y);      // This Function is created to move th cursor
@@ -27,11 +27,14 @@ bool isLeftEnemy1Possible(int temp_row_idx, int temp_col_idx);
 void MoveEnemy1Right();
 void MoveEnemy1Left();
 bool isClimbUpPossible(string &LeftKey, string &RightKey);
-bool isClimbDownPossible(string &LeftKey, string &RightKey);
+bool isClimbDownPossible(string &LeftKey, string &RightKey, int &ladder_count);
 void ClimbUp(string &step1, string &step2, int &ladder_count, string &ManicClimbing, int temp_x, int temp_y, string &LeftKey, string &RightKey);
 void ClimbDown(string &step1, string &step2, int &ladder_count, string &ManicClimbing, int temp_x, int temp_y, string &LeftKey, string &RightKey);
 void ManicClimb(string &step1, string &step2, int &ladder_count, string &ManicClimbing, int temp_x, int temp_y, string &LeftKey, string &RightKey, string &LadderPosition);
-string isClimbPosition(string &LeftKey, string &RightKey);
+string isClimbPosition(string &LeftKey, string &RightKey, int &ladder_count);
+int keysLevel1 = 2; //There are two keys in level1
+int keysLevel2 = 3;
+string LevelStatus = "LEVEL1"; //This Variable is used to store the current level of manic
 void CompleteBrokenLadder(); // This Function is used to Complete Ladder because it will be broken when manic will come down with ladder
 // isClimbPosition() Function is used to find wheather ladder is in front of Manic or manic is at the position to come down from ladder
 void RemoveManic();
@@ -41,13 +44,16 @@ void PrintLives(int &lives);
 void CalculateKeys();
 void PrintKeys();
 void ResetLevel1(int &position_X, int &position_Y); // This Function is used to Reset Maze When Manic is Touched with enemy
-void CrawlManic(); //This Function is used to crawl manic with CrawlMoveRight And CrawlMoveLeft Functions
-bool isCrawlPositionPossible();          // This function is used to check wheather manic can crawl or not on certain location
-void CrawlMoveRight();                   // This function is used to move right while manic is crawling
-void CrawlMoveLeft();                    // This Function is used to move left while manic is crawlings
-void MoveManicCrawlFace();               //This Function is used to change the face of manic when he is crawling
-string ManicCrawlingFaceLocation(); // This Function is used to Find the Manic Face side when he is crawling
-void ManicLayDown(string &isManicLayed); // This function is used to lay down manic
+void CrawlManic();                                  //This Function is used to crawl manic with CrawlMoveRight And CrawlMoveLeft Functions
+bool isCrawlPositionPossible();                     // This function is used to check wheather manic can crawl or not on certain location
+void CrawlMoveRight();                              // This function is used to move right while manic is crawling
+void CrawlMoveLeft();                               // This Function is used to move left while manic is crawlings
+void MoveManicCrawlFace();                          //This Function is used to change the face of manic when he is crawling
+string ManicCrawlingFaceLocation();                 // This Function is used to Find the Manic Face side when he is crawling
+void ManicLayDown(string &isManicLayed);            // This function is used to lay down manic
+string isManicInBox = "NOT IN BOX";                 //This Variable is used to store the status wheather manic is in the box
+void PlaceManicInBox();                             //This Function is used to place manic in box when he is near the box and he is able to go in box
+string isMoveBoxPossible();                         //This function is used to check wheather manic can go into box or not
 string isEnemyStuck = "NOT STUCK";
 int laddder_X = 14; // The Left HEad of Manic should be Equal to this to climb
 int ladder_Y = 6;
@@ -57,7 +63,7 @@ string MoveLeftStatus = "Obstacle_Present";  // Variable to keep status for movi
 string MoveDownStatus = "Obstacle_Present";  // Variable to keep status for moving down wheather there is a obstacle present at down
 string MoveUpStatus = "Obstacle_Present";    // Variable to keep Status for moving Up wheather there is a obstacle present at up
 int ManicJumpCount = 0;
-int ManicJumpLimit = 5;               // Manic Can jum 5 rows up
+int ManicJumpLimit = 6;               // Manic Can jum 5 rows up
 int keys_captured = 0;                // This Variable will store the currently captured keys by Manic
 string ManicShould = "NOT FALL";      // To Choose wheather manic should Move Left or He Should fall
 string ManicRightJumpStatus = "FALL"; // To Choose wheather manic should Move Right or He Should fall
@@ -68,14 +74,14 @@ int Manic_Current_Col = 0;                 // To Store Manic Current Column Posi
 string ManicFallingStatus = "NOT FALLING"; // Variable to Store Status of Manic Wheather Manic is Falling or Not
 string ManicJumpingStatus = "NOT JUMPING";
 string isManicFrozen = "NOT FROZEN"; // This variable will be freeze manic and manic can not move right or left when he is freeze
+string isManicLayed = "NOT LAYED"; // This variable to check whather manic is layeed down to ground or not
 // Checks Variable Ends
 int main()
 {
     string LadderPosition = "NOTHING"; // This Variable is used to store status of ladder position as RIGHT OR LEFT OF MANIC
-    string isManicLayed = "NOT LAYED"; // This variable to check whather manic is layeed down to ground or not
     string RightKey = "UNLOCKED";      // Right and left keys can be locaked or unlocked according to hurdles at front positions
     string LeftKey = "UNLOCKED";
-    int face_count = 0; //THis Variable is used to count the arrow keys for when to move manic face 
+    int face_count = 0; //THis Variable is used to count the arrow keys for when to move manic face
     int ManicInitialPosition_X = 29;
     int ManicInitialPosition_Y = 6;
     int lives = 3;
@@ -94,6 +100,7 @@ int main()
     bool Temp_Manic_Falling_Status;
     int temp_x = 0; // Temperary VAriables to perform different functions on manic location
     int temp_y = 0;
+    string temp_direction_status = "RIGHT"; //This Variable is used to store manic face location
     for (int total_turns = lives; total_turns != 0; total_turns--)
     {
         while (gameRunning)
@@ -114,9 +121,18 @@ int main()
                     {
                         gameRunning = ManicMoveLeft();
                     }
-                    if(isManicLayed == "LAYED"){
-                        MoveManicCrawlFace();
+                    if (isManicLayed == "LAYED")
+                    {
+                        if (temp_direction_status == "RIGHT")
+                        {
+                            MoveManicCrawlFace();
+                            temp_direction_status = "LEFT";
+                        }
                         CrawlMoveLeft();
+                        if (isMoveBoxPossible() == "LEFT")
+                        {
+                            PlaceManicInBox();
+                        }
                     }
                 }
             }
@@ -129,9 +145,25 @@ int main()
                     {
                         gameRunning = ManicMoveRight();
                     }
-                    if(isManicLayed == "LAYED"){
-                        //MoveManicCrawlFace();
+                    if (isManicLayed == "LAYED")
+                    {
+                        if (temp_direction_status == "LEFT")
+                        {
+                            MoveManicCrawlFace();
+                            temp_direction_status = "RIGHT";
+                        }
                         CrawlMoveRight();
+                        if (isMoveBoxPossible() == "RIGHT")
+                        {
+                            PlaceManicInBox();
+                            if(isManicInBox == "IN BOX"){
+                                if(LevelStatus == "LEVEL1"){
+                                    if(keys_captured == keysLevel1){
+                                        gameRunning = false;
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -166,9 +198,13 @@ int main()
             }
             if (GetAsyncKeyState(VK_NUMPAD0))
             {
-                if ((isClimbUpPossible(LeftKey, RightKey) || isClimbDownPossible(LeftKey, RightKey)) && isManicClimbing == "NOT CLIMBING")
+                if (isClimbDownPossible(LeftKey, RightKey, ladder_count) && ladder_count != 0)
                 {
-                    LadderPosition = isClimbPosition(LeftKey, RightKey);
+                    ladder_count = 0;
+                }
+                if ((isClimbUpPossible(LeftKey, RightKey) || isClimbDownPossible(LeftKey, RightKey, ladder_count)) && isManicClimbing == "NOT CLIMBING")
+                {
+                    LadderPosition = isClimbPosition(LeftKey, RightKey, ladder_count);
 
                     SetManicCurrentLocation();
                     temp_x = Manic_Current_Row;
@@ -176,15 +212,14 @@ int main()
                 }
                 ManicClimb(step1, step2, ladder_count, isManicClimbing, temp_x, temp_y, LeftKey, RightKey, LadderPosition);
             }
-            
-                if (GetAsyncKeyState(VK_NUMPAD5))
-                {
-                    //This Function will check wheather manic can crawl according to his current location
-                    // And it will assign isManicLayed Varible to "LAYED" if He will be possible to lay down
-                    ManicLayDown(isManicLayed);
-                    
-                }
-        
+
+            if (GetAsyncKeyState(VK_NUMPAD5))
+            {
+                //This Function will check wheather manic can crawl according to his current location
+                // And it will assign isManicLayed Varible to "LAYED" if He will be possible to lay down
+                ManicLayDown(isManicLayed);
+            }
+
             if (GetAsyncKeyState(VK_ESCAPE))
             {
                 cout << "Game Over";
@@ -226,6 +261,17 @@ void CalculateKeys(int &key_captured)
 }
 void PrintKeys()
 {
+    int temp_count = 0;
+    for(int x = 0;x<maze_row;x++){ //Identifying how many keys are left in maze
+        for(int y = 0;y<maze_col;y++){
+            if(maze[x][y] == '!'){
+                temp_count++;
+            }
+        }
+    }
+    if(LevelStatus == "LEVEL1"){
+        keys_captured = keysLevel1-temp_count;
+    }
     gotoxy(40, 40);
     cout << "Keys :\t";
     for (int temp_idx = keys_captured; temp_idx != 0; temp_idx--)
@@ -716,7 +762,7 @@ bool isClimbUpPossible(string &LeftKey, string &RightKey)
     }
     return false;
 }
-bool isClimbDownPossible(string &LeftKey, string &RightKey)
+bool isClimbDownPossible(string &LeftKey, string &RightKey, int &ladder_count)
 {
     // This function is used to check wheather manic can climb down or not
     SetManicCurrentLocation();
@@ -733,7 +779,7 @@ void RemoveManic()
     {
         for (int a = 0; a < maze_col; a++)
         {
-            if (maze[i][a] == '/' || maze[i][a] == '\\')
+            if (maze[i][a] == '/' || maze[i][a] == '\\' || maze[i][a] == '-')
             {
                 maze[i][a] = ' ';
                 gotoxy(a, i);
@@ -851,21 +897,32 @@ void CrawlMoveRight()
 }
 string ManicCrawlingFaceLocation() // This Function is used to Find the Manic Face side when he is crawling
 {
-    string temp_face_location = "RIGHT";
+    bool isFound = false;
+    string temp_face_location = "NOTHING";
     int temp_tail_y = 0; // These Variables are used to compare y index of crawling manic tail and head to guess the current facing location
     int temp_head_y = 0;
     for (int x = 30; x < maze_row; x++)
     { // Searching for Location of MAnic While Crawling
-        for (int y = 0; y < maze_col; y--)
+        for (int y = 0; y < maze_col; y++)
         {
             if (maze[x][y] == '-')
             {
                 temp_tail_y = y;
+                isFound = true;
             }
             else if (maze[x][y] == '/' || maze[x][y] == '\\')
             {
                 temp_head_y = y;
+                isFound = true;
             }
+            else
+            {
+                isFound = false;
+            }
+        }
+        if (isFound)
+        {
+            break;
         }
     }
     if (temp_head_y > temp_tail_y)
@@ -890,6 +947,7 @@ void MoveManicCrawlFace()
             {
                 if (maze[x][y] == '/')
                 {
+                    RemoveManic();
                     maze[x][y] = '-';
                     maze[x][y + 1] = '-';
                     maze[x][y + 2] = '/';
@@ -920,6 +978,7 @@ void MoveManicCrawlFace()
             {
                 if (maze[x][y] == '-')
                 {
+                    RemoveManic();
                     maze[x][y] = '/';
                     maze[x][y + 1] = '\\';
                     maze[x][y + 2] = '-';
@@ -946,9 +1005,9 @@ void MoveManicCrawlFace()
 void CrawlMoveLeft()
 {
     char temp_char = ' ';
-     for (int x = 0; x < maze_row; x++)
+    for (int x = 0; x < maze_row; x++)
     {
-        for (int y = 0; y <maze_col; y++)
+        for (int y = 0; y < maze_col; y++)
         {
             temp_char = maze[x][y];
             if (temp_char == '\\' || temp_char == '/' || temp_char == '-')
@@ -1037,14 +1096,14 @@ void ManicClimb(string &step1, string &step2, int &ladder_count, string &ManicCl
         ClimbDown(step1, step2, ladder_count, ManicClimbing, temp_x, temp_y, LeftKey, RightKey);
     }
 }
-string isClimbPosition(string &LeftKey, string &RightKey)
+string isClimbPosition(string &LeftKey, string &RightKey, int &ladder_count)
 {                                     // This Function is used to check manic should climb up or climb down
     string temp_position = "NOTHING"; // By Default there is nothing means that ladder is not present near manic to climb up or climb down
     if (isClimbUpPossible(LeftKey, RightKey))
     {
         temp_position = "UP"; // UP means ladder is set to move up
     }
-    else if (isClimbDownPossible(LeftKey, RightKey))
+    else if (isClimbDownPossible(LeftKey, RightKey, ladder_count))
     {
         temp_position = "DOWN"; // DOWN means that ladder is set at position that manic can move down
     }
@@ -1144,3 +1203,117 @@ void CompleteBrokenLadder()
     gotoxy(y + 1, x + 1);
     cout << '_';
 }
+string isMoveBoxPossible()
+{
+    string temp = " ";
+    //bool isFound = false;
+    temp = ManicCrawlingFaceLocation();
+    for (int x = 0; x < maze_row; x++)
+    {
+        for (int y = 0; y < maze_col; y++)
+        {
+            if (temp == "LEFT")
+            {
+                if (maze[x][y] == '/')
+                {
+                    if (maze[x][y - 1] == ')')
+                    { //This will check wheather box is present at front of manic when he is at layed on the ground
+                        return "LEFT";
+                    }
+                }
+            }
+            else if (temp == "RIGHT")
+            {
+                if (maze[x][y] == '\\')
+                {
+                    if (maze[x][y + 1] == '(')
+                    {
+                        return "RIGHT";
+                    }
+                }
+            }
+        }
+    }
+    return "NOT"; //THis shows thers is no box at right or left
+}
+void PlaceManicInBox()
+{
+    bool isFound = false;
+    string temp = isMoveBoxPossible();
+    for (int x = 0; x < maze_row; x++)
+    {
+        for (int y = 0; y < maze_col; y++)
+        {
+            if (temp == "RIGHT")
+            {
+                if (maze[x][y] == '\\')
+                {
+                    RemoveManic();
+                    maze[x-2][y + 5] = '/'; //This is printing Manic inside the box if box is at right side
+                    maze[x-2][y + 6] = '\\';
+                    maze[x - 1][y + 5] = '\\';
+                    maze[x - 1][y + 6] = '/';
+                    maze[x][y + 5] = '/';
+                    maze[x][y + 6] = '\\';
+                    gotoxy(y + 5, x-2);
+                    cout << '/';
+                    gotoxy(y + 6, x-2);
+                    cout << '\\';
+                    gotoxy(y + 5, x - 1);
+                    cout << '\\';
+                    gotoxy(y + 6, x - 1);
+                    cout << '/';
+                    gotoxy(y + 5, x);
+                    cout << '/';
+                    gotoxy(y + 6, x);
+                    cout << '\\';
+                    isFound = true;
+                    isManicInBox = "IN BOX";
+                    isManicFrozen = "FROZEN";
+                    isManicLayed = "NOT LAYED";  
+                break;
+                }
+                
+            }
+            else if (temp == "LEFT")
+            {
+                if (maze[x][y] == '/')
+                {
+                    RemoveManic();
+                    maze[x-2][y - 5] = '/'; //This is printing Manic inside the box if box is at right side
+                    maze[x-2][y - 6] = '\\';
+                    maze[x - 1][y - 5] = '\\';
+                    maze[x - 1][y - 6] = '/';
+                    maze[x][y - 5] = '/';
+                    maze[x][y - 6] = '\\';
+                    gotoxy(y - 5, x-2);
+                    cout << '/';
+                    gotoxy(y - 6, x-2);
+                    cout << '\\';
+                    gotoxy(y - 5, x - 1);
+                    cout << '\\';
+                    gotoxy(y - 6, x - 1);
+                    cout << '/';
+                    gotoxy(y - 5, x);
+                    cout << '/';
+                    gotoxy(y - 6, x);
+                    cout << '\\';
+                    isFound = "true";
+                isManicInBox = "IN BOX";
+                isManicFrozen = "FROZEN";
+                isManicLayed = "NOT LAYED";  
+                break;
+                }
+                
+            }
+            
+        }
+        if(isFound){
+            break;
+        }
+        isManicFrozen = "NOT FROZEN";
+    }
+}
+/*bool isNextLevel(){
+
+}*/
