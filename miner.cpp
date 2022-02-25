@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <windows.h>
-#include <math.h>
+#include <time.h>
 using namespace std;
 const int row = 45;
 const int col = 130;
@@ -9,7 +9,7 @@ int maze_row = 33;
 int maze_col = 105;
 char maze[row][col];
 void gotoxy(int x, int y);      // This Function is created to move th cursor
-void loadMaze();                // This function is used to load maze from maze.txt file
+void loadMaze(int &lives);                // This function is used to load maze from maze.txt file
 void printMaze();               // This function is used to print maze from maze.txt file
 bool ManicMoveLeft();           // This function is used to move manic at left side
 bool ManicMoveRight();          // This function is used to Move manic at right
@@ -34,8 +34,17 @@ void ClimbUp(string &step1, string &step2, int &ladder_count, string &ManicClimb
 void ClimbDown(string &step1, string &step2, int &ladder_count, string &ManicClimbing, int temp_x, int temp_y, string &LeftKey, string &RightKey);
 void ManicClimb(string &step1, string &step2, int &ladder_count, string &ManicClimbing, int temp_x, int temp_y, string &LeftKey, string &RightKey, string &LadderPosition);
 string isClimbPosition(string &LeftKey, string &RightKey, int &ladder_count);
+long fireGenerateCount = 19; //A fire will generate after every iteration multiple of 19
 bool isNextLevel();
-void ChangeMaze();
+void ChangeMaze(int &lives);
+void CalculateScore();
+int FireDirection();
+void generatefire();
+void MoveFire();
+int health = 100;
+void PrintHealth();
+void PrintScore();
+int score = 0;
 int keysLevel1 = 2; // There are two keys in level1
 int keysLevel2 = 5;
 string LevelStatus = "LEVEL1"; // This Variable is used to store the current level of manic
@@ -86,6 +95,11 @@ string plateMoving = "RIGHT"; //By default plate will be moving in right
 void movePlate();
 void PlateMoveRight();
 void PlateMoveLeft();
+char firePreviousItem = ' ';
+void Menu();
+void save(int &lives);
+void saveImpVariables(int &lives);
+int option = 0;
 // Checks Variable Ends
 int main()
 {
@@ -105,7 +119,8 @@ int main()
     string right_pressed = "NOT PRESSED";
     string ClimbingStatus = "END"; // This variable is used to store the status of climbing wheather the manic has started climbing or not
     bool gameRunning = true;
-    loadMaze();
+    Menu();
+    loadMaze(lives);
     system("cls");
     printMaze();
     bool Temp_Manic_Falling_Status;
@@ -114,8 +129,16 @@ int main()
     string temp_direction_status = "RIGHT"; // This Variable is used to store manic face location
     for (int total_turns = lives; total_turns != 0; total_turns--)
     {
+        
         while (gameRunning)
         {
+            if(LevelStatus == "LEVEL2"){
+            if(fireGenerateCount%19 == 0){
+                generatefire();
+            }
+            fireGenerateCount++;
+            }
+            MoveFire();
             movePlate();
             string temp_direction_status = "RIGHT";
             Sleep(50);
@@ -183,7 +206,13 @@ int main()
                                     if (keys_captured == keysLevel1)
                                     {
                                         LevelStatus = "LEVEL2";
-ChangeMaze();
+ChangeMaze(lives);
+                                    }
+                                }
+                                if(LevelStatus == "LEVEL2"){
+                                    if(keys_captured == keysLevel2){
+                                        total_turns = 0;
+                                        break;
                                     }
                                 }
                             }
@@ -255,8 +284,15 @@ ChangeMaze();
             }
             PrintLives(lives);
             PrintKeys();
+            CalculateScore();
+            PrintScore();
+            PrintHealth();
+           save(lives);
+            if(health == 0){
+                gameRunning = false;
+            }
         }
-
+health=100;
         CalculateLives(lives);
         PrintLives(lives); // When live will be minus it have to remove last location
         ResetLevel1(ManicInitialPosition_X, ManicInitialPosition_Y);
@@ -264,13 +300,88 @@ ChangeMaze();
     }
     return 0;
 }
+void Menu(){
+    system("cls");
+    for(int i = 0;i<7;i++){
+        cout << endl;
+    }
+    cout << "\t\t\tMenu>>"<<endl;
+    cout << "\t\t\t1_Start New Game"<<endl;
+    cout << "\t\t\t2_Load Game"<<endl;
+    cout << "\t\t\t3_See Instructions"<<endl;
+    cout << "\t\t\t4_Exit"<<endl;
+    cout << "\t\t\tEnter your Option";
+    cin >> option;
+}
+void save(int &lives){
+    fstream file;
+    string line;
+    file.open("Load.txt",ios::out);
+    for(int a = 0;a<maze_row;a++){
+        for(int b = 0;b<maze_col;b++){
+            file<<maze[a][b];
+        }
+        file << '\n';
+    }
+    file.close();
+    saveImpVariables(lives);
+}
+void saveImpVariables(int &lives){
+    fstream file;
+    string line;
+    file.open("impVariables.txt",ios::out);
+    file<<isManicFrozen<<'\n';
+    file<<ManicFallingStatus<<'\n';
+    file<<ManicJumpingStatus<<'\n';
+    file<<isManicInBox<<'\n';
+    file<<isManicLayed<<'\n';
+    file<<score<<'\n';
+    file<<health<<'\n';
+    file<<lives<<'\n';
+    file<<keys_captured<<'\n';
+    file<<LevelStatus;
+    file.close();
+}
+void loadImpVariables(int &lives){
+fstream file;
+string line;
+int temp_h = 0;
+file.open("impVariables.txt",ios::in);
+while(!file.eof()){
+    getline(file,line);
+    isManicFrozen=line;
+    getline(file,line);
+    ManicFallingStatus = line;
+    getline(file,line);
+    ManicJumpingStatus = line;
+    getline(file,line);
+    isManicInBox = line;
+    getline(file,line);
+    isManicLayed = line;
+    getline(file,line);
+    temp_h = stoi(line);
+    score = temp_h;
+    getline(file,line);
+    temp_h = stoi(line);
+    health = temp_h;
+    getline(file,line);
+    temp_h = stoi(line);
+    lives = temp_h;
+    getline(file,line);
+    temp_h = stoi(line);
+    keys_captured = temp_h;
+    getline(file,line);
+    LevelStatus = line;
+}
+file.close();
+}
 void CalculateLives(int &lives)
 {
     lives = lives - 1;
 }
 void PrintLives(int &lives)
 {
-        gotoxy(12, 45);
+        gotoxy(12, 42);
         cout << "LIVES::\t"<<lives;
    
 }
@@ -298,19 +409,31 @@ void PrintKeys()
     if(LevelStatus == "LEVEL2"){
         keys_captured = keysLevel2-temp_count;
     }
-    gotoxy(40, 45);
+    gotoxy(12, 44);
     cout << "Keys :\t";
     for (int temp_idx = keys_captured; temp_idx != 0; temp_idx--)
     {
+
         cout << " ! ";
     }
 }
-void loadMaze()
+void loadMaze(int &lives)
 {
+    if(option == 2){
+    loadImpVariables(lives);}
+    char temp_c;
     string line;
     int row_idx = 0;
     fstream file;
-    if(LevelStatus == "LEVEL1"){
+    if(option == 2){
+        option = 0;
+        file.open("Load.txt",ios::in);
+    }
+    else if(option == 1){
+        option = 0;
+        file.open("maze.txt",ios::in);
+    }
+    else if(LevelStatus == "LEVEL1"){
     file.open("maze.txt", ios::in);}
     else if(LevelStatus == "LEVEL2"){
         file.open("level2.txt",ios::in);
@@ -318,7 +441,7 @@ void loadMaze()
     while (!file.eof())
     {
         getline(file, line);
-        for (int col_idx = 0; col_idx < maze_col; col_idx++)
+        for (int col_idx = 0; line[col_idx] != '\0'; col_idx++)
         {
             maze[row_idx][col_idx] = line[col_idx];
         }
@@ -1460,12 +1583,12 @@ if(LevelStatus == "LEVEL2"){
 }
 return false;
 }
-void ChangeMaze(){
+void ChangeMaze(int &lives){
     if(isNextLevel()){
     system("cls");
     maze_row = 41;
     maze_col = 107;
-    loadMaze();
+    loadMaze(lives);
     printMaze();
     ManicFallingStatus = "NOT FALLING";
     isManicFrozen = "NOT FROZEN";
@@ -1527,4 +1650,79 @@ void PlateMoveRight(){
             }
         }
     }
+}
+int FireDirection(){
+    srand(time(0));
+    int result = 1+ (rand() % 105);
+    return result;
 }   
+void generatefire(){
+    int value= FireDirection(); //Getting value to be used for random column
+    maze[1][value] = '&';//generating fire at row 1
+    gotoxy(value,1);
+    cout << '&';
+}
+void MoveFire(){
+    for(int x = maze_row-1;x!=0;x--){
+        for(int y = 0;y<maze_col;y++){
+            if(maze[x][y] == '&'){
+                if(maze[x+1][y] == ' '){
+                maze[x][y] = ' ';
+                maze[x+1][y] = '&';
+                gotoxy(y,x);
+                cout << ' ';
+                gotoxy(y,x+1);
+                cout << '&';
+                }
+                else if(maze[x+1][y] == '/' || maze[x+1][y] == '\\'){
+                    maze[x][y] = ' ';
+                    gotoxy(y,x);
+                    cout << ' ';
+                    health=health-5;
+                }
+                else{
+                    maze[x][y] = ' ';
+                    gotoxy(y,x);
+                    cout << ' ';
+                }
+            }
+        }
+    }
+}
+void CalculateScore(){
+    int temp_count = 0;
+    for (int x = 0; x < maze_row; x++)
+    { // Identifying how many keys are left in maze
+        for (int y = 0; y < maze_col; y++)
+        {
+            if (maze[x][y] == '!')
+            {
+                temp_count++;
+            }
+        }
+    }
+    if(LevelStatus == "LEVEL1"){
+        keys_captured = keysLevel1-temp_count;
+    }
+    else{
+        if(LevelStatus == "LEVEL2"){
+            keys_captured = keysLevel2-temp_count;
+        }
+    }
+    if(LevelStatus == "LEVEL1"){
+    score = 5*keys_captured;
+    }
+if(LevelStatus == "LEVEL2"){
+    score=(5*keys_captured)+(5*keysLevel1); //It is understood that in level1 there was two key so score in level1 is 5*keysLevel1
+}
+}
+void PrintScore(){
+    gotoxy(12,46);
+    cout << "Score:\t"<<score;
+}
+void PrintHealth(){
+    gotoxy(12,48);
+    cout << "HEALTH:\t   ";
+    gotoxy(12,48);
+    cout << "HEALTH:\t"<<health;
+}
