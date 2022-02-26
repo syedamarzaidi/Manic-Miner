@@ -9,7 +9,7 @@ int maze_row = 33;
 int maze_col = 105;
 char maze[row][col];
 void gotoxy(int x, int y);      // This Function is created to move th cursor
-void loadMaze(int &lives);                // This function is used to load maze from maze.txt file
+void loadMaze(int &lives);      // This function is used to load maze from maze.txt file
 void printMaze();               // This function is used to print maze from maze.txt file
 bool ManicMoveLeft();           // This function is used to move manic at left side
 bool ManicMoveRight();          // This function is used to Move manic at right
@@ -34,7 +34,7 @@ void ClimbUp(string &step1, string &step2, int &ladder_count, string &ManicClimb
 void ClimbDown(string &step1, string &step2, int &ladder_count, string &ManicClimbing, int temp_x, int temp_y, string &LeftKey, string &RightKey);
 void ManicClimb(string &step1, string &step2, int &ladder_count, string &ManicClimbing, int temp_x, int temp_y, string &LeftKey, string &RightKey, string &LadderPosition);
 string isClimbPosition(string &LeftKey, string &RightKey, int &ladder_count);
-long fireGenerateCount = 19; //A fire will generate after every iteration multiple of 19
+long fireGenerateCount = 19; // A fire will generate after every iteration multiple of 19
 bool isNextLevel();
 void ChangeMaze(int &lives);
 void CalculateScore();
@@ -87,11 +87,13 @@ string ManicRightJumpStatus = "FALL"; // To Choose wheather manic should Move Ri
 // int ManicLeftJumpLimit = 0;
 int Manic_Current_Row = 0;                 // To Store Manic Current Row position
 int Manic_Current_Col = 0;                 // To Store Manic Current Column Position
+void GameOver();
+void CleanScreen();
 string ManicFallingStatus = "NOT FALLING"; // Variable to Store Status of Manic Wheather Manic is Falling or Not
 string ManicJumpingStatus = "NOT JUMPING";
 string isManicFrozen = "NOT FROZEN"; // This variable will be freeze manic and manic can not move right or left when he is freeze
 string isManicLayed = "NOT LAYED";   // This variable to check whather manic is layeed down to ground or not
-string plateMoving = "RIGHT"; //By default plate will be moving in right
+string plateMoving = "RIGHT";        // By default plate will be moving in right
 void movePlate();
 void PlateMoveRight();
 void PlateMoveLeft();
@@ -99,6 +101,7 @@ char firePreviousItem = ' ';
 void Menu();
 void save(int &lives);
 void saveImpVariables(int &lives);
+void printInstrunctions();
 int option = 0;
 // Checks Variable Ends
 int main()
@@ -119,7 +122,15 @@ int main()
     string right_pressed = "NOT PRESSED";
     string ClimbingStatus = "END"; // This variable is used to store the status of climbing wheather the manic has started climbing or not
     bool gameRunning = true;
-    Menu();
+    option = 4;
+    while (option != 1 && option != 2)
+    {
+        Menu();
+        if (option == 3)
+        {
+            printInstrunctions();
+        }
+    }
     loadMaze(lives);
     system("cls");
     printMaze();
@@ -129,14 +140,15 @@ int main()
     string temp_direction_status = "RIGHT"; // This Variable is used to store manic face location
     for (int total_turns = lives; total_turns != 0; total_turns--)
     {
-        
         while (gameRunning)
         {
-            if(LevelStatus == "LEVEL2"){
-            if(fireGenerateCount%19 == 0){
-                generatefire();
-            }
-            fireGenerateCount++;
+            if (LevelStatus == "LEVEL2")
+            {
+                if (fireGenerateCount % 19 == 0)
+                {
+                    generatefire();
+                }
+                fireGenerateCount++;
             }
             MoveFire();
             movePlate();
@@ -164,14 +176,16 @@ int main()
                             MoveManicCrawlFace();
                             temp_direction_status = "LEFT";
                         }
-                         if(isManicStandUpPossible()){
-                        isManicFrozen = "NOT FROZEN";
-                        isManicLayed = "NOT LAYED";
-                        ManicStandUp();
-                    }
-                    if(!isManicStandUpPossible()){
-                        CrawlMoveLeft();
-                    }
+                        if (isManicStandUpPossible())
+                        {
+                            isManicFrozen = "NOT FROZEN";
+                            isManicLayed = "NOT LAYED";
+                            ManicStandUp();
+                        }
+                        if (!isManicStandUpPossible())
+                        {
+                            CrawlMoveLeft();
+                        }
                         if (isMoveBoxPossible() == "LEFT")
                         {
                             PlaceManicInBox();
@@ -206,13 +220,7 @@ int main()
                                     if (keys_captured == keysLevel1)
                                     {
                                         LevelStatus = "LEVEL2";
-ChangeMaze(lives);
-                                    }
-                                }
-                                if(LevelStatus == "LEVEL2"){
-                                    if(keys_captured == keysLevel2){
-                                        total_turns = 0;
-                                        break;
+                                        ChangeMaze(lives);
                                     }
                                 }
                             }
@@ -287,12 +295,22 @@ ChangeMaze(lives);
             CalculateScore();
             PrintScore();
             PrintHealth();
-           save(lives);
-            if(health == 0){
+           // save(lives);
+            if (health == 0)
+            {
                 gameRunning = false;
             }
         }
-health=100;
+        if (LevelStatus == "LEVEL2")
+                                {
+                                    if (keys_captured == keysLevel2)
+                                    {
+                                        GameOver();
+                                        total_turns = 0;
+                                        break;
+                                    }
+                                }
+        health = 100;
         CalculateLives(lives);
         PrintLives(lives); // When live will be minus it have to remove last location
         ResetLevel1(ManicInitialPosition_X, ManicInitialPosition_Y);
@@ -300,80 +318,88 @@ health=100;
     }
     return 0;
 }
-void Menu(){
+void Menu()
+{
     system("cls");
-    for(int i = 0;i<7;i++){
+    for (int i = 0; i < 7; i++)
+    {
         cout << endl;
     }
-    cout << "\t\t\tMenu>>"<<endl;
-    cout << "\t\t\t1_Start New Game"<<endl;
-    cout << "\t\t\t2_Load Game"<<endl;
-    cout << "\t\t\t3_See Instructions"<<endl;
-    cout << "\t\t\t4_Exit"<<endl;
+    cout << "\t\t\tMenu>>" << endl;
+    cout << "\t\t\t1_Start New Game" << endl;
+    cout << "\t\t\t2_Load Game" << endl;
+    cout << "\t\t\t3_See Instructions" << endl;
+    cout << "\t\t\t4_Exit" << endl;
     cout << "\t\t\tEnter your Option";
     cin >> option;
 }
-void save(int &lives){
+void save(int &lives)
+{
     fstream file;
     string line;
-    file.open("Load.txt",ios::out);
-    for(int a = 0;a<maze_row;a++){
-        for(int b = 0;b<maze_col;b++){
-            file<<maze[a][b];
+    file.open("Load.txt", ios::out);
+    for (int a = 0; a < maze_row; a++)
+    {
+        for (int b = 0; b < maze_col; b++)
+        {
+            file << maze[a][b];
         }
         file << '\n';
     }
     file.close();
     saveImpVariables(lives);
 }
-void saveImpVariables(int &lives){
+void saveImpVariables(int &lives)
+{
     fstream file;
     string line;
-    file.open("impVariables.txt",ios::out);
-    file<<isManicFrozen<<'\n';
-    file<<ManicFallingStatus<<'\n';
-    file<<ManicJumpingStatus<<'\n';
-    file<<isManicInBox<<'\n';
-    file<<isManicLayed<<'\n';
-    file<<score<<'\n';
-    file<<health<<'\n';
-    file<<lives<<'\n';
-    file<<keys_captured<<'\n';
-    file<<LevelStatus;
+    file.open("impVariables.txt", ios::out);
+    file << isManicFrozen << '\n';
+    file << ManicFallingStatus << '\n';
+    file << ManicJumpingStatus << '\n';
+    file << isManicInBox << '\n';
+    file << isManicLayed << '\n';
+    file << score << '\n';
+    file << health << '\n';
+    file << lives << '\n';
+    file << keys_captured << '\n';
+    file << LevelStatus;
     file.close();
 }
-void loadImpVariables(int &lives){
-fstream file;
-string line;
-int temp_h = 0;
-file.open("impVariables.txt",ios::in);
-while(!file.eof()){
-    getline(file,line);
-    isManicFrozen=line;
-    getline(file,line);
-    ManicFallingStatus = line;
-    getline(file,line);
-    ManicJumpingStatus = line;
-    getline(file,line);
-    isManicInBox = line;
-    getline(file,line);
-    isManicLayed = line;
-    getline(file,line);
-    temp_h = stoi(line);
-    score = temp_h;
-    getline(file,line);
-    temp_h = stoi(line);
-    health = temp_h;
-    getline(file,line);
-    temp_h = stoi(line);
-    lives = temp_h;
-    getline(file,line);
-    temp_h = stoi(line);
-    keys_captured = temp_h;
-    getline(file,line);
-    LevelStatus = line;
-}
-file.close();
+void loadImpVariables(int &lives)
+{
+    fstream file;
+    string line;
+    int temp_h = 0;
+    file.open("impVariables.txt", ios::in);
+    while (!file.eof())
+    {
+        getline(file, line);
+        isManicFrozen = line;
+        getline(file, line);
+        ManicFallingStatus = line;
+        getline(file, line);
+        ManicJumpingStatus = line;
+        getline(file, line);
+        isManicInBox = line;
+        getline(file, line);
+        isManicLayed = line;
+        getline(file, line);
+        temp_h = stoi(line);
+        score = temp_h;
+        getline(file, line);
+        temp_h = stoi(line);
+        health = temp_h;
+        getline(file, line);
+        temp_h = stoi(line);
+        lives = temp_h;
+        getline(file, line);
+        temp_h = stoi(line);
+        keys_captured = temp_h;
+        getline(file, line);
+        LevelStatus = line;
+    }
+    file.close();
 }
 void CalculateLives(int &lives)
 {
@@ -381,9 +407,8 @@ void CalculateLives(int &lives)
 }
 void PrintLives(int &lives)
 {
-        gotoxy(12, 42);
-        cout << "LIVES::\t"<<lives;
-   
+    gotoxy(12, 42);
+    cout << "LIVES::\t" << lives;
 }
 void CalculateKeys(int &key_captured)
 {
@@ -406,8 +431,9 @@ void PrintKeys()
     {
         keys_captured = keysLevel1 - temp_count;
     }
-    if(LevelStatus == "LEVEL2"){
-        keys_captured = keysLevel2-temp_count;
+    if (LevelStatus == "LEVEL2")
+    {
+        keys_captured = keysLevel2 - temp_count;
     }
     gotoxy(12, 44);
     cout << "Keys :\t";
@@ -419,24 +445,31 @@ void PrintKeys()
 }
 void loadMaze(int &lives)
 {
-    if(option == 2){
-    loadImpVariables(lives);}
+    if (option == 2)
+    {
+        loadImpVariables(lives);
+    }
     char temp_c;
     string line;
     int row_idx = 0;
     fstream file;
-    if(option == 2){
+    if (option == 2)
+    {
         option = 0;
-        file.open("Load.txt",ios::in);
+        file.open("Load.txt", ios::in);
     }
-    else if(option == 1){
+    else if (option == 1)
+    {
         option = 0;
-        file.open("maze.txt",ios::in);
+        file.open("maze.txt", ios::in);
     }
-    else if(LevelStatus == "LEVEL1"){
-    file.open("maze.txt", ios::in);}
-    else if(LevelStatus == "LEVEL2"){
-        file.open("level2.txt",ios::in);
+    else if (LevelStatus == "LEVEL1")
+    {
+        file.open("maze.txt", ios::in);
+    }
+    else if (LevelStatus == "LEVEL2")
+    {
+        file.open("level2.txt", ios::in);
     }
     while (!file.eof())
     {
@@ -539,7 +572,7 @@ bool isLeftMovePossible(int temp_row_idx, int temp_col_idx)
 }
 bool isDownMovePossible(int temp_row_idx, int temp_col_idx)
 {
-    if (maze[temp_row_idx + 1][temp_col_idx] == ' ' || maze[temp_row_idx + 1][temp_col_idx] == '0' || maze[temp_row_idx + 1][temp_col_idx + 1] == '+' || maze[temp_row_idx + 1][temp_col_idx + 1] == '!' || maze[temp_row_idx+1][temp_col_idx] == '!' || maze[temp_row_idx + 1][temp_col_idx + 1] == '_') // This If condition require editing in changing in condition when it will meet up with enemy
+    if (maze[temp_row_idx + 1][temp_col_idx] == ' ' || maze[temp_row_idx + 1][temp_col_idx] == '0' || maze[temp_row_idx + 1][temp_col_idx + 1] == '+' || maze[temp_row_idx + 1][temp_col_idx + 1] == '!' || maze[temp_row_idx + 1][temp_col_idx] == '!' || maze[temp_row_idx + 1][temp_col_idx + 1] == '_') // This If condition require editing in changing in condition when it will meet up with enemy
     {
         return true;
     }
@@ -547,67 +580,63 @@ bool isDownMovePossible(int temp_row_idx, int temp_col_idx)
 }
 bool isUpHurdlePresent(int temp_row_idx, int temp_col_idx)
 {
-    if ((maze[temp_row_idx - 1][temp_col_idx] == ' ' && maze[temp_row_idx - 1][temp_col_idx + 1] == ' ') || (maze[temp_row_idx - 1][temp_col_idx] == '_' || maze[temp_row_idx - 1][temp_col_idx + 1] == '_') || (maze[temp_row_idx - 1][temp_col_idx] == '!' || maze[temp_row_idx - 1][temp_col_idx + 1] == '!'))
+    if ((((maze[temp_row_idx - 1][temp_col_idx] == ' ' && maze[temp_row_idx - 1][temp_col_idx + 1] == ' ') || (maze[temp_row_idx - 1][temp_col_idx] == '_' && maze[temp_row_idx - 1][temp_col_idx + 1] == '_') || (maze[temp_row_idx - 1][temp_col_idx] == '!' || maze[temp_row_idx - 1][temp_col_idx + 1] == '!'))) && (maze[temp_row_idx - 1][temp_col_idx] != '$' && maze[temp_row_idx - 1][temp_col_idx + 1] != '$'))
     {
         return false;
     }
     return true;
 }
-
 bool ManicMoveLeft()
 {
-    int temp_count = 0;
-    for (int row_idx = 0; row_idx < maze_row; row_idx++)
+    bool temper = true; // Used to check isLeftMovePossibleCondition Only for one time
+    SetManicCurrentLocation();
+    for (int row_idx = Manic_Current_Row; row_idx < Manic_Current_Row + 3; row_idx++)
     {
-        for (int col_idx = 0; col_idx < maze_col; col_idx++)
+        for (int col_idx = Manic_Current_Col; col_idx < Manic_Current_Col + 2; col_idx++)
         {
-            if (maze[row_idx][col_idx] == '/' && isLeftMovePossible(row_idx, col_idx))
+            if (temper)
             {
-                if (maze[row_idx + 1][col_idx - 1] == '0' || maze[row_idx + 1][col_idx - 1] == '+' || maze[row_idx + 2][col_idx - 1] == '0' || maze[row_idx + 2][col_idx - 1] == '+' || maze[row_idx][col_idx - 1] == '0' || maze[row_idx][col_idx - 1] == '+')
+                if (isLeftMovePossible(row_idx, col_idx))
                 {
-                    return false;
+                    if (maze[row_idx + 1][col_idx - 1] == '0' || maze[row_idx + 1][col_idx - 1] == '+' || maze[row_idx + 2][col_idx - 1] == '0' || maze[row_idx + 2][col_idx - 1] == '+' || maze[row_idx][col_idx - 1] == '0' || maze[row_idx][col_idx - 1] == '+')
+                    {
+                        return false;
+                    }
+                    if (maze[row_idx + 1][col_idx - 1] == '!' || maze[row_idx + 1][col_idx - 1] == '!' || maze[row_idx + 2][col_idx - 1] == '!' || maze[row_idx + 2][col_idx - 1] == '!' || maze[row_idx][col_idx - 1] == '!' || maze[row_idx][col_idx - 1] == '!')
+                    {
+                        keys_captured += 1; // This if condition is checking if there is a key in left then it will update the keys_captured variable
+                    }
+                    MoveLeftStatus = "No_Obstacle";
                 }
-                if (maze[row_idx + 1][col_idx - 1] == '!' || maze[row_idx + 1][col_idx - 1] == '!' || maze[row_idx + 2][col_idx - 1] == '!' || maze[row_idx + 2][col_idx - 1] == '!' || maze[row_idx][col_idx - 1] == '!' || maze[row_idx][col_idx - 1] == '!')
-                {
-                    keys_captured += 1; // This if condition is checking if there is a key in left then it will update the keys_captured variable
-                }
-                MoveLeftStatus = "No_Obstacle";
+                temper = false;
             }
             if (MoveLeftStatus == "No_Obstacle")
             {
                 if (maze[row_idx][col_idx] == '/')
                 {
-                    temp_count++;
                     maze[row_idx][col_idx] = ' ';
                     gotoxy(col_idx, row_idx);
                     cout << ' ';
                     maze[row_idx][col_idx - 1] = '/';
                     gotoxy(col_idx - 1, row_idx);
-                    cout << maze[row_idx][col_idx - 1];
+                    cout << '/';
                 }
                 else if (maze[row_idx][col_idx] == '\\')
                 {
-                    temp_count++;
                     maze[row_idx][col_idx] = ' ';
                     gotoxy(col_idx, row_idx);
                     cout << ' ';
                     maze[row_idx][col_idx - 1] = '\\';
                     gotoxy(col_idx - 1, row_idx);
-                    cout << maze[row_idx][col_idx - 1];
+                    cout << '\\';
                 }
             }
-            if(temp_count == 6){
-                break;
-            }
-        }
-        if(temp_count == 6){
-            break;
         }
     }
     MoveLeftStatus = "Obstacle";
     return true;
 }
-bool ManicMoveRight()
+/*bool ManicMoveRight()
 {
     if (ManicFallingStatus == "NOT FALLING" || ManicJumpingStatus == "JUMPING")
     {
@@ -652,6 +681,57 @@ bool ManicMoveRight()
         }
         MoveRightStatus = "Obstacle_Present";
     }
+    return true;
+}
+*/
+bool ManicMoveRight()
+{
+    bool temper = true;
+    SetManicCurrentLocation();
+    for (int row_idx = Manic_Current_Row; row_idx < Manic_Current_Row + 3; row_idx++)
+    {
+        for (int col_idx = Manic_Current_Col + 1; col_idx > Manic_Current_Col - 1; col_idx--)
+        {
+            if (temper)
+            {
+                if (isRightMovePossible(row_idx, col_idx))
+                {
+                    if (maze[row_idx + 1][col_idx + 1] == '0' || maze[row_idx + 1][col_idx + 1] == '+' || maze[row_idx + 2][col_idx + 1] == '0' || maze[row_idx + 2][col_idx + 1] == '+' || maze[row_idx][col_idx + 1] == '0' || maze[row_idx][col_idx + 1] == '+')
+                    {
+                        return false;
+                    }
+                    if (maze[row_idx + 1][col_idx + 1] == '!' || maze[row_idx + 1][col_idx + 1] == '!' || maze[row_idx + 2][col_idx + 1] == '!' || maze[row_idx + 2][col_idx + 1] == '!' || maze[row_idx][col_idx + 1] == '!' || maze[row_idx][col_idx + 1] == '!')
+                    {
+                        keys_captured += 1;
+                    }
+                    MoveRightStatus = "No_Obstacle";
+                }
+                temper = false;
+            }
+            if (MoveRightStatus == "No_Obstacle")
+            {
+                if (maze[row_idx][col_idx] == '/')
+                {
+                    maze[row_idx][col_idx] = ' ';
+                    gotoxy(col_idx, row_idx);
+                    cout << ' ';
+                    maze[row_idx][col_idx + 1] = '/';
+                    gotoxy(col_idx + 1, row_idx);
+                    cout << maze[row_idx][col_idx + 1];
+                }
+                else if (maze[row_idx][col_idx] == '\\')
+                {
+                    maze[row_idx][col_idx] = ' ';
+                    gotoxy(col_idx, row_idx);
+                    cout << ' ';
+                    maze[row_idx][col_idx + 1] = '\\';
+                    gotoxy(col_idx + 1, row_idx);
+                    cout << maze[row_idx][col_idx + 1];
+                }
+            }
+        }
+    }
+    MoveRightStatus = "Obstacle_Present";
     return true;
 }
 bool ManicMoveDown()
@@ -701,6 +781,7 @@ bool ManicMoveDown()
 }
 bool ManicMoveUp()
 {
+    bool temp_flag = true;
     SetManicCurrentLocation();
     for (int temp_row = Manic_Current_Row; temp_row < Manic_Current_Row + 3; temp_row++)
     {
@@ -710,9 +791,17 @@ bool ManicMoveUp()
             {
                 keys_captured += 1;
             }
-            if (!isUpHurdlePresent(temp_row, temp_col))
+            if (temp_flag)
             {
-                MoveUpStatus = "No_Obstacle";
+                if (!isUpHurdlePresent(temp_row, temp_col))
+                {
+                    MoveUpStatus = "No_Obstacle";
+                }
+                else
+                {
+                    MoveUpStatus = "Obstacle_Present";
+                }
+                temp_flag = false;
             }
             if (MoveUpStatus == "No_Obstacle")
             {
@@ -770,7 +859,7 @@ bool JumpManic()
 bool isManicFalling()
 {
     SetManicCurrentLocation();
-    if (maze[Manic_Current_Row + 3][Manic_Current_Col] == ' ' && maze[Manic_Current_Row + 3][Manic_Current_Col + 1] == ' ' || (maze[Manic_Current_Row+3][Manic_Current_Col] == '!' || maze[Manic_Current_Row+3][Manic_Current_Col+1] == '!'))
+    if (maze[Manic_Current_Row + 3][Manic_Current_Col] == ' ' && maze[Manic_Current_Row + 3][Manic_Current_Col + 1] == ' ' || (maze[Manic_Current_Row + 3][Manic_Current_Col] == '!' || maze[Manic_Current_Row + 3][Manic_Current_Col + 1] == '!'))
     {
         ManicFallingStatus = "FALLING";
         return true;
@@ -1577,119 +1666,148 @@ void ManicStandUp()
         }
     }
 }
-bool isNextLevel(){
-if(LevelStatus == "LEVEL2"){
-    return true;
+bool isNextLevel()
+{
+    if (LevelStatus == "LEVEL2")
+    {
+        return true;
+    }
+    return false;
 }
-return false;
-}
-void ChangeMaze(int &lives){
-    if(isNextLevel()){
-    system("cls");
-    maze_row = 41;
-    maze_col = 107;
-    loadMaze(lives);
-    printMaze();
-    ManicFallingStatus = "NOT FALLING";
-    isManicFrozen = "NOT FROZEN";
-    isManicLayed = "NOT LAYED";
-    isManicInBox = "NOT IN BOX";
+void ChangeMaze(int &lives)
+{
+    if (isNextLevel())
+    {
+        system("cls");
+        maze_row = 42;
+        maze_col = 107;
+        loadMaze(lives);
+        printMaze();
+        ManicFallingStatus = "NOT FALLING";
+        isManicFrozen = "NOT FROZEN";
+        isManicLayed = "NOT LAYED";
+        isManicInBox = "NOT IN BOX";
     }
 }
-void movePlate(){
+void movePlate()
+{
     SetManicCurrentLocation();
-            if(plateMoving == "RIGHT"){
-                PlateMoveRight();
-                if(maze[Manic_Current_Row+3][Manic_Current_Col] == '='){
-                    ManicMoveRight();
-                }
-            }
-            else if(plateMoving == "LEFT"){
-                PlateMoveLeft();
-                if(maze[Manic_Current_Row+3][Manic_Current_Col] == '='){
-                    ManicMoveLeft();
-                }
-            }
-}
-void PlateMoveLeft(){
-    for(int temp_r = 0;temp_r<maze_row;temp_r++){
-        for(int temp_c = 0;temp_c<maze_col;temp_c++)
+    if (plateMoving == "RIGHT")
+    {
+        PlateMoveRight();
+        if (maze[Manic_Current_Row + 3][Manic_Current_Col] == '=')
         {
-            if(maze[temp_r][temp_c] == '='){
-                if(maze[temp_r][temp_c-1] == ' '){
-                maze[temp_r][temp_c] = ' ';
-                maze[temp_r][temp_c-1] = '=';
-                gotoxy(temp_c,temp_r);
-                cout << ' ';
-                gotoxy(temp_c-1,temp_r);
-                cout << '=';
+            ManicMoveRight();
+        }
+    }
+    else if (plateMoving == "LEFT")
+    {
+        PlateMoveLeft();
+        if (maze[Manic_Current_Row + 3][Manic_Current_Col] == '=')
+        {
+            ManicMoveLeft();
+        }
+    }
+}
+void PlateMoveLeft()
+{
+    for (int temp_r = 0; temp_r < maze_row; temp_r++)
+    {
+        for (int temp_c = 0; temp_c < maze_col; temp_c++)
+        {
+            if (maze[temp_r][temp_c] == '=')
+            {
+                if (maze[temp_r][temp_c - 1] == ' ')
+                {
+                    maze[temp_r][temp_c] = ' ';
+                    maze[temp_r][temp_c - 1] = '=';
+                    gotoxy(temp_c, temp_r);
+                    cout << ' ';
+                    gotoxy(temp_c - 1, temp_r);
+                    cout << '=';
                 }
-                else{
+                else
+                {
                     plateMoving = "RIGHT";
                 }
             }
         }
     }
 }
-void PlateMoveRight(){
- for(int temp_r = 0;temp_r<maze_row;temp_r++){
-        for(int temp_c = maze_col-1;temp_c!=0;temp_c--)
+void PlateMoveRight()
+{
+    for (int temp_r = 0; temp_r < maze_row; temp_r++)
+    {
+        for (int temp_c = maze_col - 1; temp_c != 0; temp_c--)
         {
-            if(maze[temp_r][temp_c] == '='){
-                if(maze[temp_r][temp_c+1] == ' '){
-                maze[temp_r][temp_c] = ' ';
-                maze[temp_r][temp_c+1] = '=';
-                gotoxy(temp_c,temp_r);
-                cout << ' ';
-                gotoxy(temp_c+1,temp_r);
-                cout << '=';
+            if (maze[temp_r][temp_c] == '=')
+            {
+                if (maze[temp_r][temp_c + 1] == ' ')
+                {
+                    maze[temp_r][temp_c] = ' ';
+                    maze[temp_r][temp_c + 1] = '=';
+                    gotoxy(temp_c, temp_r);
+                    cout << ' ';
+                    gotoxy(temp_c + 1, temp_r);
+                    cout << '=';
                 }
-                else{
+                else
+                {
                     plateMoving = "LEFT";
                 }
             }
         }
     }
 }
-int FireDirection(){
+int FireDirection()
+{
     srand(time(0));
-    int result = 1+ (rand() % 105);
+    int result = 1 + (rand() % 105);
     return result;
-}   
-void generatefire(){
-    int value= FireDirection(); //Getting value to be used for random column
-    maze[1][value] = '&';//generating fire at row 1
-    gotoxy(value,1);
+}
+void generatefire()
+{
+    int value = FireDirection(); // Getting value to be used for random column
+    maze[1][value] = '&';        // generating fire at row 1
+    gotoxy(value, 1);
     cout << '&';
 }
-void MoveFire(){
-    for(int x = maze_row-1;x!=0;x--){
-        for(int y = 0;y<maze_col;y++){
-            if(maze[x][y] == '&'){
-                if(maze[x+1][y] == ' '){
-                maze[x][y] = ' ';
-                maze[x+1][y] = '&';
-                gotoxy(y,x);
-                cout << ' ';
-                gotoxy(y,x+1);
-                cout << '&';
-                }
-                else if(maze[x+1][y] == '/' || maze[x+1][y] == '\\'){
+void MoveFire()
+{
+    for (int x = maze_row - 1; x != 0; x--)
+    {
+        for (int y = 0; y < maze_col; y++)
+        {
+            if (maze[x][y] == '&')
+            {
+                if (maze[x + 1][y] == ' ')
+                {
                     maze[x][y] = ' ';
-                    gotoxy(y,x);
+                    maze[x + 1][y] = '&';
+                    gotoxy(y, x);
                     cout << ' ';
-                    health=health-5;
+                    gotoxy(y, x + 1);
+                    cout << '&';
                 }
-                else{
+                else if (maze[x + 1][y] == '/' || maze[x + 1][y] == '\\')
+                {
                     maze[x][y] = ' ';
-                    gotoxy(y,x);
+                    gotoxy(y, x);
+                    cout << ' ';
+                    health = health - 5;
+                }
+                else
+                {
+                    maze[x][y] = ' ';
+                    gotoxy(y, x);
                     cout << ' ';
                 }
             }
         }
     }
 }
-void CalculateScore(){
+void CalculateScore()
+{
     int temp_count = 0;
     for (int x = 0; x < maze_row; x++)
     { // Identifying how many keys are left in maze
@@ -1701,28 +1819,64 @@ void CalculateScore(){
             }
         }
     }
-    if(LevelStatus == "LEVEL1"){
-        keys_captured = keysLevel1-temp_count;
+    if (LevelStatus == "LEVEL1")
+    {
+        keys_captured = keysLevel1 - temp_count;
     }
-    else{
-        if(LevelStatus == "LEVEL2"){
-            keys_captured = keysLevel2-temp_count;
+    else
+    {
+        if (LevelStatus == "LEVEL2")
+        {
+            keys_captured = keysLevel2 - temp_count;
         }
     }
-    if(LevelStatus == "LEVEL1"){
-    score = 5*keys_captured;
+    if (LevelStatus == "LEVEL1")
+    {
+        score = 5 * keys_captured;
     }
-if(LevelStatus == "LEVEL2"){
-    score=(5*keys_captured)+(5*keysLevel1); //It is understood that in level1 there was two key so score in level1 is 5*keysLevel1
+    if (LevelStatus == "LEVEL2")
+    {
+        score = (5 * keys_captured) + (5 * keysLevel1); // It is understood that in level1 there was two key so score in level1 is 5*keysLevel1
+    }
 }
+void PrintScore()
+{
+    gotoxy(12, 46);
+    cout << "Score:\t" << score;
 }
-void PrintScore(){
-    gotoxy(12,46);
-    cout << "Score:\t"<<score;
-}
-void PrintHealth(){
-    gotoxy(12,48);
+void PrintHealth()
+{
+    gotoxy(12, 48);
     cout << "HEALTH:\t   ";
-    gotoxy(12,48);
-    cout << "HEALTH:\t"<<health;
+    gotoxy(12, 48);
+    cout << "HEALTH:\t" << health;
+}
+void printInstrunctions()
+{
+    string key;
+    system("cls");
+    cout << "Use Right Arrow key to move Right" << endl;
+    cout << "Use Left Arrow Key to Move Left" << endl;
+    cout << "Use SpaceBar to Jump" << endl;
+    cout << "Use Numpad 0 to Climb up and come down from ladder" << endl;
+    cout << "Use Numpad 5 to Crawl" << endl;
+    cout << "press any key to continue" << endl;
+    cin >> key;
+    system("cls");
+}
+void GameOver(){
+    system("cls");
+    CleanScreen();
+    gotoxy(10,10);
+    cout << "******************************************"<<endl;
+    cout << "*           Game is Finished You Win      *"<<endl;
+    cout << "******************************************"<<endl;
+}
+void CleanScreen(){
+    for(int x = 0;x<58;x++){
+        for(int y = 0;y<115;y++){
+            gotoxy(x,y);
+            cout << ' ';
+        }
+    }
 }
